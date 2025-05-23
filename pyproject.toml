@@ -1,0 +1,210 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "digital-twin-t1d"
+version = "0.1.0"
+authors = [
+    {name = "Digital Twin T1D Team", email = "contact@digital-twin-t1d.org"},
+]
+description = "Βιβλιοθήκη ψηφιακού διδύμου για διαβήτη τύπου 1"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+keywords = [
+    "diabetes", "type1", "digital-twin", "glucose-prediction", 
+    "cgm", "machine-learning", "healthcare", "biomedical"
+]
+
+dependencies = [
+    # Core data science
+    "numpy>=1.21.0",
+    "pandas>=1.3.0",
+    "scipy>=1.7.0",
+    "scikit-learn>=1.0.0",
+    
+    # Deep learning
+    "torch>=1.10.0",
+    "torchvision>=0.11.0",
+    
+    # Time series & forecasting
+    "statsmodels>=0.13.0",
+    "prophet>=1.1.0",
+    
+    # Visualization
+    "matplotlib>=3.4.0",
+    "seaborn>=0.11.0",
+    "plotly>=5.0.0",
+    
+    # Utilities
+    "tqdm>=4.62.0",
+    "pyyaml>=5.4.0",
+    "joblib>=1.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov>=3.0",
+    "black>=22.0",
+    "isort>=5.10",
+    "flake8>=4.0",
+    "mypy>=0.950",
+    "pre-commit>=2.15",
+]
+
+docs = [
+    "sphinx>=4.0",
+    "sphinx-rtd-theme>=1.0",
+    "sphinx-autoapi>=1.8",
+    "myst-parser>=0.17",
+    "nbsphinx>=0.8",
+]
+
+examples = [
+    "jupyter>=1.0",
+    "jupyterlab>=3.0",
+    "ipywidgets>=7.6",
+    "notebook>=6.4",
+]
+
+simulation = [
+    "simpy>=4.0",
+    "gym>=0.21.0",
+    "control>=0.9.0",
+]
+
+optimization = [
+    "optuna>=3.0",
+    "hyperopt>=0.2.7",
+    "ray[tune]>=2.0",
+]
+
+all = [
+    "digital-twin-t1d[dev,docs,examples,simulation,optimization]"
+]
+
+[project.urls]
+Homepage = "https://github.com/digital-twin-t1d/digital-twin-t1d"
+Documentation = "https://digital-twin-t1d.readthedocs.io"
+Repository = "https://github.com/digital-twin-t1d/digital-twin-t1d"
+"Bug Tracker" = "https://github.com/digital-twin-t1d/digital-twin-t1d/issues"
+Changelog = "https://github.com/digital-twin-t1d/digital-twin-t1d/blob/main/CHANGELOG.md"
+
+[project.scripts]
+dttwin = "digital_twin_t1d.cli:main"
+
+[tool.setuptools]
+packages = ["digital_twin_t1d"]
+
+[tool.setuptools.package-data]
+digital_twin_t1d = ["data/*.json", "data/*.csv", "models/weights/*.pth"]
+
+# Black configuration
+[tool.black]
+line-length = 100
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+# isort configuration
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 100
+known_first_party = ["digital_twin_t1d"]
+
+# pytest configuration
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["digital_twin_t1d"]
+omit = [
+    "*/tests/*",
+    "*/examples/*",
+    "setup.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+# mypy configuration
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "torch.*",
+    "torchvision.*",
+    "sklearn.*",
+    "scipy.*",
+    "matplotlib.*",
+    "seaborn.*",
+    "plotly.*",
+    "prophet.*",
+    "statsmodels.*",
+    "optuna.*",
+    "ray.*",
+]
+ignore_missing_imports = true 

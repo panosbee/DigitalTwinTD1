@@ -1,0 +1,59 @@
+# Include the README and other important files
+include README.md
+include LICENSE
+include requirements.txt
+include requirements-dev.txt
+include setup.py
+include pyproject.toml
+include .gitignore
+
+# Include documentation
+recursive-include docs *.md *.rst *.txt *.py
+recursive-include docs *.html *.css *.js
+recursive-include docs *.png *.jpg *.svg
+
+# Include example scripts
+recursive-include examples *.py *.ipynb *.md *.txt
+recursive-include examples *.json *.yaml *.yml
+
+# Include test files
+recursive-include tests *.py
+recursive-include tests *.json *.yaml *.yml
+
+# Include configuration files
+recursive-include config *.yaml *.yml *.json *.toml
+
+# Include data files (but not actual patient data)
+recursive-include data *.json *.yaml *.yml
+recursive-include data README.md
+
+# Include package data
+recursive-include digital_twin_t1d *.json *.yaml *.yml
+recursive-include digital_twin_t1d *.txt *.md
+
+# Exclude unwanted files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__
+global-exclude .pytest_cache
+global-exclude .git*
+global-exclude *.so
+global-exclude .DS_Store
+global-exclude Thumbs.db
+
+# Exclude patient data for privacy
+global-exclude patient_data/*
+global-exclude cgm_data/*
+global-exclude clinical_data/*
+
+# Exclude model files (too large)
+global-exclude *.pth
+global-exclude *.pt
+global-exclude *.ckpt
+global-exclude models/saved/*
+
+# Exclude logs
+global-exclude logs/*
+global-exclude wandb/*
+global-exclude tensorboard_logs/* 

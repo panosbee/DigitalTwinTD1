@@ -214,6 +214,6 @@ MIT License – see [LICENSE](LICENSE) for details.
 
 **Made with ❤️ for the global T1D community**
 
-[🌟 Star on GitHub]([https://github.com/panosbee/DigitalTwinTD1.git) • [🐦 Follow on Twitter](https://x.com/skour09)
+[🌟 Star on GitHub](https://github.com/panosbee/DigitalTwinTD1.git) • [🐦 Follow on Twitter](https://x.com/skour09)
 
 </div>

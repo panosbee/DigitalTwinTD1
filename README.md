@@ -85,6 +85,52 @@ pip install -e .[dev]
 ## 🎮 Quick Start Examples
 
 ### 1. Basic Glucose Prediction
+
+->
+
+## 🎬 Live Demos & Showcases
+
+Experience the **magic** of Digital Twin T1D in action! We've created stunning demos that showcase how our AI saves lives:
+
+### 🚀 Available Demos
+
+1. **`showcase_demo.py`** - Live presentation-ready demo showing real-time predictions, device integration, and clinical impact
+2. **`sdk/demo_mode.py`** - Interactive scenarios: Hypoglycemia prevention, smart meal management, exercise adaptation
+3. **`sdk/device_simulator.py`** - Virtual CGM & Pump simulator that behaves like real Dexcom/Omnipod devices
+
+#### 📹 Video Demonstrations
+
+<div align="center">
+
+[![Digital Twin T1D Demo](https://img.shields.io/badge/▶️_Watch_Demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=AQFJ2C6wZqI)
+
+<img src="https://github.com/panosbee/DigitalTwinTD1/blob/main/docs/demo.gif" width="600" alt="Live Demo">
+
+*Click the image above to watch the full demo video*
+
+</div>
+
+#### 🎯 Run It Yourself
+
+```bash
+# Quick showcase (no dependencies)
+python showcase_demo.py
+
+# Full interactive demo
+python sdk/demo_mode.py
+
+# Virtual device simulation
+python sdk/device_simulator.py
+```
+
+See how we **predict hypoglycemia 45 minutes in advance** and provide life-saving recommendations! 🚨
+
+---
+
+## 🎮 Quick Start Examples
+
+### 1. Basic Glucose Prediction
+
 ```python
 from sdk import DigitalTwinSDK
 

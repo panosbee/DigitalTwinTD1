@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # Main SDK API
+  sdk-api:
+    build: .
+    image: digitaltwin/t1d-sdk:latest
+    container_name: dt-sdk-api
+    ports:
+      - "8080:8080"
+    environment:
+      - SDK_MODE=production
+      - API_HOST=0.0.0.0
+      - API_PORT=8080
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching and real-time features
+  redis:
+    image: redis:7-alpine
+    container_name: dt-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  # Dashboard (optional)
+  dashboard:
+    build: .
+    image: digitaltwin/t1d-dashboard:latest
+    container_name: dt-dashboard
+    command: python -m sdk.dashboard
+    ports:
+      - "8081:8081"
+    environment:
+      - DASHBOARD_PORT=8081
+      - API_URL=http://sdk-api:8080
+    depends_on:
+      - sdk-api
+    restart: unless-stopped
+
+  # Jupyter for research mode
+  jupyter:
+    build: .
+    image: digitaltwin/t1d-jupyter:latest
+    container_name: dt-jupyter
+    command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root
+    ports:
+      - "8888:8888"
+    environment:
+      - SDK_MODE=research
+    volumes:
+      - ./notebooks:/app/notebooks
+      - ./data:/app/data
+    restart: unless-stopped
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: dt-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - sdk-api
+      - dashboard
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+
+networks:
+  default:
+    name: digitaltwin-network 

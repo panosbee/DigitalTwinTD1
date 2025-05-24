@@ -69,6 +69,8 @@ pydantic>=1.10.0
 # Testing και Quality
 pytest>=7.0.0
 pytest-cov>=3.0.0
+pytest-asyncio>=0.21.0
+pytest-benchmark>=4.0.0
 black>=22.0.0
 flake8>=5.0.0
 mypy>=0.971
@@ -76,6 +78,7 @@ mypy>=0.971
 # Documentation
 sphinx>=5.0.0
 sphinx-rtd-theme>=1.0.0
+sphinx-autodoc-typehints>=1.19.0
 
 # Development
 jupyter>=1.0.0
@@ -84,4 +87,25 @@ notebook>=6.4.0
 
 # Medical Standards
 pydicom>=2.3.0  # Medical imaging
-hl7>=0.3.12     # Health data exchange 
+hl7>=0.3.12     # Health data exchange
+
+# Performance Optimization
+numba>=0.56.0  # JIT compilation
+aioredis>=2.0.0  # Async Redis
+psutil>=5.9.0  # System monitoring
+
+# Dashboard
+dash-bootstrap-components>=1.2.0
+dash-daq>=0.5.0
+
+# Additional ML/DL
+einops>=0.6.0  # Tensor operations
+accelerate>=0.20.0  # HuggingFace accelerate
+
+# API Development
+httpx>=0.24.0  # Async HTTP client
+python-multipart>=0.0.6  # File uploads
+
+# Plugin System
+importlib-metadata>=6.0.0
+pluggy>=1.0.0 

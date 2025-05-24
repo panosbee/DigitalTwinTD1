@@ -120,12 +120,9 @@ can give back the simple joys that diabetes has taken away.
 Get Help
 --------
 
-- 📧 **Email**: support@digitaltwin-t1d.org
-- 💬 **Discord**: Join our community
-- 🐛 **Issues**: GitHub Issues
-- 📚 **Blog**: Latest research & updates
 
-Made with ❤️ by Panos & Claude
+
+Made with ❤️ by Panos 
 ------------------------------
 
 *"Technology powered by love can change the world"*

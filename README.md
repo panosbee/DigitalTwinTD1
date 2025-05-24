@@ -1,6 +1,3 @@
-
----
-
 # 🩺 Digital Twin T1D - Universal SDK for Type 1 Diabetes Management
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -34,7 +31,7 @@ prediction = sdk.predict_glucose(horizon_minutes=30)
 ## ✨ Key Features
 
 ### 🧠 State-of-the-Art AI Models
-- **7+ Pre-trained Models**: LSTM, Transformer, Mamba, Ensemble
+- **7 Production-Ready Models**: LSTM, Transformer, Mamba, Advanced (29KB!), Baseline, Mechanistic, Ensemble
 - **<5% MAPE**: Clinical-grade accuracy
 - **<1ms latency**: Real-time predictions
 - **Auto-adaptation**: Learns from each patient
@@ -80,7 +77,7 @@ pip install digital-twin-t1d
 pip install digital-twin-t1d[full]
 
 # Development installation
-git clone https://github.com/yourusername/digital-twin-t1d
+git clone https://github.com/panosbee/DigitalTwinTD1.git
 cd digital-twin-t1d
 pip install -e .[dev]
 ```
@@ -151,21 +148,22 @@ digital-twin-t1d/
 │   ├── dashboard.py         # Real-time monitoring dashboard
 │   ├── plugins.py           # Plugin system
 │   └── api.py              # REST API endpoints
-├── models/                  # 10+ state-of-the-art models
+├── models/                  # 7 production-ready models
 ├── tests/                   # Comprehensive test suite
 └── examples/               # Ready-to-run examples
 ```
 
 ## 🧠 Available Models
 
-| Model | Type | MAPE | Inference Time | Use Case |
-|-------|------|------|---------------|----------|
-| Glucose Ensemble v1 | Ensemble | 4.9% | 2.5ms | Best overall accuracy |
-| Glucose Mamba v1 | SSM | 5.8% | 0.8ms | Ultra-fast inference |
-| Glucose Transformer v1 | Transformer | 6.2% | 1.5ms | Long-term patterns |
-| Pediatric Glucose v1 | LSTM | 9.1% | 1.2ms | Children-specific |
-| Meal Detector v1 | CNN | 89.5% acc | 0.5ms | Meal detection |
-| Exercise Impact v1 | LSTM | 12.3% | 1.0ms | Exercise prediction |
+| Model | Type | Size | Lines | Use Case |
+|-------|------|------|-------|----------|
+| Advanced Models | Multi-Modal | 29KB | 779 lines | State-of-the-art ensemble |
+| Transformer | Attention | 21KB | 574 lines | Long-term pattern recognition |
+| Mechanistic | Physics-Based | 16KB | 354 lines | Physiological modeling |
+| LSTM | Recurrent | 14KB | 375 lines | Time series prediction |
+| Baseline | Statistical | 13KB | 343 lines | ARIMA & Prophet baselines |
+| Mamba SSM | State-Space | 3.6KB | 93 lines | Ultra-fast inference |
+| Ensemble | Meta-Model | 2.9KB | 86 lines | Model combination |
 
 ## 🌐 REST API
 
@@ -286,4 +284,3 @@ MIT License – see [LICENSE](LICENSE) for details.
 </div>
 
 ---
-

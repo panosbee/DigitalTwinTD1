@@ -1,4 +1,3 @@
-Certainly! Here is your README.md file fully translated into English, keeping the structure, formatting, and technical details unchanged:
 
 ---
 
@@ -288,4 +287,3 @@ MIT License – see [LICENSE](LICENSE) for details.
 
 ---
 
-Let me know if you want any further adjustments to the translation or formatting!

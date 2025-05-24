@@ -1,0 +1,51 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 mypy black pytest pytest-cov
+        pip install -r requirements.txt
+    
+    - name: Lint with flake8
+      run: |
+        # Stop on errors
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Warning on complexity
+        flake8 . --count --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Type check with mypy
+      run: |
+        mypy sdk/ --ignore-missing-imports
+    
+    - name: Check formatting with black
+      run: |
+        black --check sdk/ models/ agents/
+    
+    - name: Run tests
+      run: |
+        pytest tests/ -v --cov=sdk --cov-report=xml
+    
+    - name: Check TODOs
+      run: |
+        echo "📝 TODO Summary:"
+        grep -r "TODO" --include="*.py" . | wc -l | xargs echo "Total TODOs:"
+        echo "---"
+        grep -r "TODO" --include="*.py" . | head -20 

@@ -1,3 +1,7 @@
+Certainly! Here is your README.md file fully translated into English, keeping the structure, formatting, and technical details unchanged:
+
+---
+
 # 🩺 Digital Twin T1D - Universal SDK for Type 1 Diabetes Management
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -5,18 +9,18 @@
 [![Production Ready](https://img.shields.io/badge/Production-Ready-green.svg)]()
 [![Clinical Grade](https://img.shields.io/badge/Clinical-Grade-red.svg)]()
 
-> **"Τεχνολογία με αγάπη για 1 δισεκατομμύριο ανθρώπους με διαβήτη"**  
+> **"Technology with love for 1 billion people with diabetes"**  
 > *"Kids will be able to enjoy Christmas sweets again!"* 🎄
 
 ## 🌟 Vision & Mission
 
-Το Digital Twin T1D SDK είναι μια **plug-and-play** πλατφόρμα που επιτρέπει σε hardware/software manufacturers, ερευνητές, γιατρούς και όλους τους stakeholders να ενσωματώσουν state-of-the-art AI για τη διαχείριση του Διαβήτη Τύπου 1.
+Digital Twin T1D SDK is a **plug-and-play** platform that enables hardware/software manufacturers, researchers, doctors, and all stakeholders to integrate state-of-the-art AI for Type 1 Diabetes management.
 
 ### 🎯 Core Mission
-- **Βοηθάμε 1 δισεκατομμύριο ανθρώπους** να ζήσουν χωρίς περιορισμούς
-- **Μηδενίζουμε τα υπογλυκαιμικά επεισόδια** με AI predictions
-- **Βελτιώνουμε την ποιότητα ζωής** με personalized recommendations
-- **Δημοκρατικοποιούμε την πρόσβαση** σε cutting-edge τεχνολογία
+- **Helping 1 billion people** live without limits
+- **Eliminating hypoglycemic episodes** with AI predictions
+- **Improving quality of life** with personalized recommendations
+- **Democratizing access** to cutting-edge technology
 
 ## 🚀 3-Line Integration
 
@@ -50,21 +54,21 @@ prediction = sdk.predict_glucose(horizon_minutes=30)
 - Synthetic Data Generator
 
 ### ⚡ Performance Optimized
-- **1000+ predictions/second** με Numba JIT
-- **Async batch processing** για scalability
-- **Redis caching** για instant responses
+- **1000+ predictions/second** with Numba JIT
+- **Async batch processing** for scalability
+- **Redis caching** for instant responses
 - **GPU acceleration** ready
 
 ### 🏥 Clinical Features
-- **FDA-ready reports** με clinical metrics
+- **FDA-ready reports** with clinical metrics
 - **Evidence-based protocols** (ADA/EASD/ISPAD)
 - **Virtual clinical trials** simulation
 - **Pediatric-specific** support
 
 ### 🔌 Extensible Architecture
-- **Plugin system** για custom models/devices
-- **REST API** για cloud integration
-- **Real-time dashboard** με Plotly/Dash
+- **Plugin system** for custom models/devices
+- **REST API** for cloud integration
+- **Real-time dashboard** with Plotly/Dash
 - **Federated learning** ready
 
 ## 📦 Installation
@@ -73,7 +77,7 @@ prediction = sdk.predict_glucose(horizon_minutes=30)
 # Basic installation
 pip install digital-twin-t1d
 
-# Full installation με όλα τα features
+# Full installation with all features
 pip install digital-twin-t1d[full]
 
 # Development installation
@@ -156,7 +160,7 @@ digital-twin-t1d/
 ## 🧠 Available Models
 
 | Model | Type | MAPE | Inference Time | Use Case |
-|-------|------|------|----------------|----------|
+|-------|------|------|---------------|----------|
 | Glucose Ensemble v1 | Ensemble | 4.9% | 2.5ms | Best overall accuracy |
 | Glucose Mamba v1 | SSM | 5.8% | 0.8ms | Ultra-fast inference |
 | Glucose Transformer v1 | Transformer | 6.2% | 1.5ms | Long-term patterns |
@@ -235,15 +239,15 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ## 🙏 Acknowledgments
 
-**"Μαζί αλλάζουμε ζωές με τεχνολογία και αγάπη!"**
+**"Together we change lives with technology and love!"**
 
 ---
 
 ## 🌍 Global Impact
 
 * **🏥 150+ healthcare institutions**
-* **👨‍⚕️ 2 500+ diabetes specialists**
-* **👥 50 000+ active users**
+* **👨‍⚕️ 2,500+ diabetes specialists**
+* **👥 50,000+ active users**
 * **🌎 25+ countries**
 
 ---
@@ -256,7 +260,7 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ---
 
-## 📄 Licence
+## 📄 License
 
 MIT License – see [LICENSE](LICENSE) for details.
 
@@ -281,3 +285,7 @@ MIT License – see [LICENSE](LICENSE) for details.
 [🌟 Star on GitHub](https://github.com/panosbee/DigitalTwinTD1.git) • [🐦 Follow on Twitter](https://x.com/skour09)
 
 </div>
+
+---
+
+Let me know if you want any further adjustments to the translation or formatting!

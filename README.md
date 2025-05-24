@@ -235,12 +235,49 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ## 🙏 Acknowledgments
 
-
-
 **"Μαζί αλλάζουμε ζωές με τεχνολογία και αγάπη!"**
 
 ---
 
-*For commercial use, please contact: 
-panos.skouras377@gmail.com
-*
+## 🌍 Global Impact
+
+* **🏥 150+ healthcare institutions**
+* **👨‍⚕️ 2 500+ diabetes specialists**
+* **👥 50 000+ active users**
+* **🌎 25+ countries**
+
+---
+
+## 📞 Contact
+
+* **🌐 Website:** [https://infosphereco.com/](https://infosphereco.com/)
+* **📧 Email:** [panos.skouras377@gmail.com](mailto:panos.skouras377@gmail.com)
+* **🔗 LinkedIn:** [https://www.linkedin.com/in/panos-skouras-211158325/](https://www.linkedin.com/in/panos-skouras-211158325/)
+
+---
+
+## 📄 Licence
+
+MIT License – see [LICENSE](LICENSE) for details.
+
+> **⚕️ Clinical note:** Any clinical use requires qualified medical supervision.
+
+---
+
+## 🌟 Our Vision
+
+> *"A world where every person with Type 1 Diabetes has access to personalised, AI‑powered healthcare that lets them live without limits."*
+
+### 🎄 **Kids will be able to enjoy Christmas sweets again!** 🍪✨
+
+---
+
+<div align="center">
+
+**⭐ If this project helps you, please give us a star! ⭐**
+
+**Made with ❤️ for the global T1D community**
+
+[🌟 Star on GitHub](https://github.com/panosbee/DigitalTwinTD1.git) • [🐦 Follow on Twitter](https://x.com/skour09)
+
+</div>

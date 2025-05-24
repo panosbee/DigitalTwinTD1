@@ -2,8 +2,39 @@
 🧠 Digital Twin T1D Model Zoo
 ============================
 
-Pre-trained models ready για immediate use.
-Download, load, και predict σε seconds!
+Provides a curated collection of pre-trained machine learning models specifically
+tailored for Type 1 Diabetes (T1D) applications, such as glucose prediction,
+meal detection, and exercise impact assessment.
+
+This module simplifies the process of accessing, downloading, and using these
+state-of-the-art models within the Digital Twin T1D SDK.
+
+Key Features:
+- **Centralized Registry**: Access to 7+ pre-trained, diabetes-specific models.
+- **Easy Download & Load**: One-line functions to download and use models.
+- **Model Metadata**: Detailed information for each model (version, metrics, training data).
+- **Performance Benchmarking**: Utilities to evaluate and compare model performance.
+- **Versioning**: Support for different versions of models.
+- **CLI Interface**: Command-line tools for managing and interacting with the Model Zoo.
+
+Example:
+    >>> from sdk.model_zoo import ModelZoo, list_available_models, quick_predict
+    
+    # List all available models
+    >>> list_available_models()
+    
+    # Get a quick prediction using the best ensemble model
+    >>> glucose_history = [120, 125, 130, 128, 135]
+    >>> prediction = quick_predict(glucose_history, model="glucose-ensemble-v1", horizon=60)
+    >>> print(f"Predicted glucose in 60 mins: {prediction:.1f} mg/dL")
+    
+    # Load and benchmark a specific model
+    >>> zoo = ModelZoo()
+    >>> model_info = zoo.get_model_info("glucose-mamba-v1")
+    >>> if model_info:
+    ...     print(f"Benchmarking {model_info.name}...")
+    ...     metrics = zoo.benchmark_model("glucose-mamba-v1")
+    ...     print(f"MAPE: {metrics['mape']}%")
 """
 
 import os
@@ -14,6 +45,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 import torch
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 import logging
 from dataclasses import dataclass
@@ -24,7 +56,21 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ModelInfo:
-    """Information about a model in the zoo."""
+    """Dataclass to store metadata and information about a model in the Zoo.
+
+    Attributes:
+        name (str): Human-readable name of the model.
+        version (str): Version string for the model (e.g., "1.0.0").
+        description (str): A brief description of the model's purpose and architecture.
+        model_type (str): Category of the model (e.g., "lstm", "transformer", "ensemble", "cnn").
+        size_mb (float): Approximate size of the model file in megabytes.
+        metrics (Dict[str, float]): Key performance metrics (e.g., MAPE, RMSE, accuracy).
+        training_data (str): Description of the dataset used to train the model.
+        release_date (str): Date when the model version was released (YYYY-MM-DD).
+        download_url (str): URL from where the model can be downloaded.
+        checksum (str): Checksum (e.g., MD5, SHA256) to verify model integrity after download.
+        requirements (List[str]): List of Python package dependencies for this model.
+    """
     name: str
     version: str
     description: str
@@ -39,18 +85,27 @@ class ModelInfo:
     
 
 class ModelZoo:
+    """A central hub for accessing and managing pre-trained Digital Twin T1D models.
+
+    The ModelZoo provides a curated collection of state-of-the-art machine learning
+    models specifically designed for various Type 1 Diabetes management tasks.
+    It simplifies downloading, loading, and using these models, and also offers
+    tools for benchmarking and comparing their performance.
+
+    Key functionalities include:
+    - Listing available models with detailed metadata.
+    - Downloading model files with checksum verification.
+    - Loading models into memory for inference (supports CPU and GPU).
+    - Making predictions using loaded models.
+    - Benchmarking model performance on test data.
+    - Comparing multiple models based on standard metrics.
+
+    The `MODELS` class attribute acts as a registry, containing `ModelInfo` objects
+    for each available pre-trained model.
     """
-    Central hub για pre-trained Digital Twin models.
     
-    Features:
-    - 10+ state-of-the-art models
-    - One-line download και load
-    - Automatic performance benchmarking
-    - Model versioning και updates
-    """
-    
-    # Model registry (in production, this would be a remote API)
-    MODELS = {
+    # Model registry (in a production system, this might be fetched from a remote server/API)
+    MODELS: Dict[str, ModelInfo] = {
         "glucose-lstm-v1": ModelInfo(
             name="Glucose LSTM v1",
             version="1.0.0",
@@ -191,15 +246,19 @@ class ModelZoo:
     def list_models(self, 
                    model_type: Optional[str] = None,
                    sort_by: str = "metrics.mape") -> List[ModelInfo]:
-        """
-        List available models.
-        
+        """Lists available pre-trained models, optionally filtered by type and sorted by a metric.
+
         Args:
-            model_type: Filter by model type (lstm, transformer, etc.)
-            sort_by: Sort by metric (e.g., 'metrics.mape', 'size_mb')
-            
+            model_type (Optional[str]): If provided, filters models by this type 
+                                        (e.g., "lstm", "transformer", "glucose_predictor"). 
+                                        Defaults to None (all models).
+            sort_by (str): The attribute or metric to sort the models by. 
+                           For metrics, use "metrics.metric_name" (e.g., "metrics.mape").
+                           Defaults to "metrics.mape" (lower is better).
+
         Returns:
-            List of ModelInfo objects
+            List[ModelInfo]: A list of `ModelInfo` objects for the available models,
+                             sorted as specified.
         """
         models = list(self.MODELS.values())
         
@@ -217,19 +276,35 @@ class ModelZoo:
         return models
     
     def get_model_info(self, model_id: str) -> Optional[ModelInfo]:
-        """Get information about a specific model."""
+        """Retrieves detailed information (metadata) for a specific model.
+
+        Args:
+            model_id (str): The unique identifier of the model (e.g., "glucose-lstm-v1").
+
+        Returns:
+            Optional[ModelInfo]: A `ModelInfo` dataclass object if the model is found,
+                                 otherwise None.
+        """
         return self.MODELS.get(model_id)
     
     def download_model(self, model_id: str, force: bool = False) -> Path:
-        """
-        Download a model from the zoo.
-        
+        """Downloads a specified model from the Model Zoo to the local cache directory.
+
+        Checks if the model is already cached and verifies its integrity using a checksum.
+        If `force` is True, it will re-download even if a cached version exists.
+        For demonstration, this currently creates dummy model files.
+
         Args:
-            model_id: Model identifier
-            force: Force re-download even if cached
-            
+            model_id (str): The identifier of the model to download.
+            force (bool): If True, forces re-downloading the model even if it exists
+                          in the cache. Defaults to False.
+
         Returns:
-            Path to downloaded model
+            Path: The local file path to the downloaded (or cached) model.
+
+        Raises:
+            ValueError: If the `model_id` is not found in the registry.
+            # Potentially requests.exceptions.RequestException for real download errors.
         """
         if model_id not in self.MODELS:
             raise ValueError(f"Unknown model: {model_id}")
@@ -256,15 +331,22 @@ class ModelZoo:
         return model_path
     
     def load_model(self, model_id: str, device: str = "cpu") -> Any:
-        """
-        Load a model ready for inference.
-        
+        """Loads a downloaded model into memory, ready for inference.
+
+        Handles model deserialization (e.g., via `torch.load`). The model is
+        set to evaluation mode (`model.eval()`).
+
         Args:
-            model_id: Model identifier
-            device: Device to load on ('cpu', 'cuda', 'mps')
-            
+            model_id (str): The identifier of the model to load.
+            device (str): The device to load the model onto (e.g., "cpu", "cuda", "mps").
+                          Defaults to "cpu".
+
         Returns:
-            Loaded model
+            Any: The loaded PyTorch model (or other model object type).
+
+        Raises:
+            ValueError: If `model_id` is not found or model file doesn't exist.
+            Exception: If there is an error during model loading/deserialization.
         """
         # Check if already loaded
         if model_id in self.loaded_models:
@@ -293,16 +375,19 @@ class ModelZoo:
                model_id: str,
                glucose_history: np.ndarray,
                horizon_minutes: int = 30) -> float:
-        """
-        Make prediction using a zoo model.
-        
+        """Makes a glucose prediction using a specified model from the Zoo.
+
+        This method handles loading the model, preparing the input data (normalization),
+        running inference, and denormalizing the output.
+
         Args:
-            model_id: Model to use
-            glucose_history: Recent glucose values
-            horizon_minutes: Prediction horizon
-            
+            model_id (str): The identifier of the model to use for prediction.
+            glucose_history (np.ndarray): A NumPy array of recent glucose values.
+                                          Shape should be compatible with the model's input requirements.
+            horizon_minutes (int): The prediction horizon in minutes. Defaults to 30.
+
         Returns:
-            Predicted glucose value
+            float: The predicted glucose value at the specified horizon, clipped to a realistic range [40, 400].
         """
         model = self.load_model(model_id)
         
@@ -331,15 +416,20 @@ class ModelZoo:
         return float(np.clip(prediction, 40, 400))
     
     def benchmark_model(self, model_id: str, test_data: Optional[Any] = None) -> Dict[str, float]:
-        """
-        Benchmark a model's performance.
-        
+        """Benchmarks the performance of a specified model.
+
+        Calculates key metrics like MAPE, RMSE, MAE, and average inference time.
+        If `test_data` is not provided, synthetic data is generated for benchmarking.
+
         Args:
-            model_id: Model to benchmark
-            test_data: Test dataset (uses synthetic if None)
-            
+            model_id (str): The identifier of the model to benchmark.
+            test_data (Optional[Any]): Test data to use for benchmarking. 
+                                       If None, synthetic data will be generated.
+                                       Expected to be a 1D NumPy array of glucose values.
+
         Returns:
-            Performance metrics
+            Dict[str, float]: A dictionary containing performance metrics:
+                              {'mape', 'rmse', 'mae', 'avg_inference_ms', 'samples_tested'}.
         """
         model = self.load_model(model_id)
         
@@ -385,19 +475,21 @@ class ModelZoo:
         logger.info(f"✅ Benchmark complete: MAPE={mape:.2f}%, RMSE={rmse:.2f}")
         return metrics
     
-    def compare_models(self, model_ids: List[str], test_data: Optional[Any] = None) -> pd.DataFrame:
-        """
-        Compare multiple models.
-        
+    def compare_models(self, model_ids: List[str], test_data: Optional[Any] = None) -> 'pandas.DataFrame':
+        """Compares the performance of multiple models from the Zoo.
+
+        Runs benchmarks for each specified model and returns a DataFrame with
+        the comparative results, sorted by MAPE (lower is better).
+
         Args:
-            model_ids: List of models to compare
-            test_data: Test dataset
-            
+            model_ids (List[str]): A list of model identifiers to compare.
+            test_data (Optional[Any]): Test data to use for benchmarking all models.
+                                       If None, synthetic data will be generated for each.
+
         Returns:
-            DataFrame with comparison results
+            pandas.DataFrame: A Pandas DataFrame summarizing the comparison, including model name,
+                              type, size, and benchmarked performance metrics.
         """
-        import pandas as pd
-        
         results = []
         
         for model_id in model_ids:
@@ -468,7 +560,9 @@ class ModelZoo:
 
 # Convenience functions
 def list_available_models():
-    """List all available models in the zoo."""
+    """Lists all available models in the Model Zoo with key details.
+    Prints the information to standard output.
+    """
     zoo = ModelZoo()
     models = zoo.list_models()
     
@@ -487,16 +581,19 @@ def list_available_models():
 def quick_predict(glucose_history: List[float], 
                  model: str = "glucose-ensemble-v1",
                  horizon: int = 30) -> float:
-    """
-    Quick prediction using a zoo model.
-    
+    """Quickly get a glucose prediction using a specified model from the Zoo.
+
+    This is a high-level convenience function that instantiates a `ModelZoo` object
+    and calls its `predict` method. Ideal for simple use cases or rapid prototyping.
+
     Args:
-        glucose_history: Recent glucose values
-        model: Model ID to use
-        horizon: Prediction horizon in minutes
-        
+        glucose_history (List[float]): A list of recent glucose values (mg/dL).
+        model (str): The identifier of the model to use. 
+                     Defaults to "glucose-ensemble-v1" (best overall accuracy).
+        horizon (int): The prediction horizon in minutes. Defaults to 30.
+
     Returns:
-        Predicted glucose value
+        float: The predicted glucose value.
     """
     zoo = ModelZoo()
     return zoo.predict(model, glucose_history, horizon)

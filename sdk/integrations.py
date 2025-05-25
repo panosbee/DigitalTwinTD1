@@ -126,7 +126,7 @@ class DexcomG6(CGMDevice):
     
     def __init__(self, device_id: str, config: Optional[Dict] = None):
         super().__init__(device_id, config)
-        self.api_endpoint = config.get('api_endpoint', 'https://api.dexcom.com')
+        self.api_endpoint = self.config.get('api_endpoint', 'https://api.dexcom.com')
         
     async def connect(self) -> bool:
         """Σύνδεση με Dexcom G6."""
@@ -224,6 +224,39 @@ class MedtronicGuardian(CGMDevice):
         # TODO: Implement
         return []
 
+class MockCGM(CGMDevice):
+    """A mock CGM device for testing purposes."""
+
+    async def connect(self) -> bool:
+        print(f"🔩 MockCGM ({self.device_id}) connected.")
+        self.status = DeviceStatus.CONNECTED
+        return True
+
+    async def disconnect(self) -> bool:
+        print(f"🔩 MockCGM ({self.device_id}) disconnected.")
+        self.status = DeviceStatus.DISCONNECTED
+        return True
+
+    async def get_reading(self) -> DeviceReading:
+        # Return a fairly stable, normal glucose reading
+        return DeviceReading(
+            timestamp=datetime.now(),
+            value=110 + np.random.normal(0, 2), # Low variance
+            unit="mg/dL",
+            device_id=self.device_id,
+            quality=1.0
+        )
+
+    async def get_history(self, hours: int = 24) -> List[DeviceReading]:
+        readings = []
+        for i in range(hours * 12):  # 5-min intervals
+            readings.append(DeviceReading(
+                timestamp=datetime.now() - timedelta(minutes=i*5),
+                value=110 + np.random.normal(0, 5), # Some variance
+                unit="mg/dL",
+                device_id=self.device_id
+            ))
+        return readings
 
 # ===== INSULIN PUMPS =====
 
@@ -404,6 +437,8 @@ class DeviceFactory:
         "freestyle_libre_3": AbbottFreestyle,
         "guardian_3": MedtronicGuardian,
         "guardian_4": MedtronicGuardian,
+        # Ensure MockCGM is defined before this line if it wasn't picked up by the previous diff part
+        "mock_cgm": MockCGM,
         
         # Pumps
         "omnipod_dash": OmnipodDash,
@@ -436,7 +471,7 @@ class DeviceFactory:
         return list(cls.DEVICE_TYPES.keys())
         
     @classmethod
-    def create_device(cls, device_type: str, device_id: str = None, config: Optional[Dict] = None):
+    def create_device(cls, device_type: str, device_id: Optional[str] = None, config: Optional[Dict] = None):
         """Alias για create method - για backward compatibility."""
         device_id = device_id or f"{device_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         return cls.create(device_type, device_id, config)
@@ -446,7 +481,7 @@ class DeviceFactory:
 SUPPORTED_DEVICES = DeviceFactory.DEVICE_TYPES.copy()
 
 # Helper functions
-async def quick_connect(device_type: str, device_id: str = None, config: Dict = None) -> DeviceIntegration:
+async def quick_connect(device_type: str, device_id: Optional[str] = None, config: Optional[Dict] = None) -> DeviceIntegration:
     """Γρήγορη σύνδεση με device."""
     device = DeviceFactory.create_device(device_type, device_id, config)
     await device.connect()

@@ -12,12 +12,24 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import multiprocessing as mp
 from typing import List, Dict, Any, Callable
 import asyncio
-import aioredis
 import pickle
+try:
+    import aioredis
+    AIOREDIS_AVAILABLE = True
+except ImportError:
+    aioredis = None # type: ignore
+    AIOREDIS_AVAILABLE = False
 import hashlib
-import numba
-from numba import jit, prange
 import torch
+try:
+    import numba
+    from numba import jit, prange
+    NUMBA_AVAILABLE = True
+except ImportError:
+    numba = None # type: ignore
+    jit = lambda *args, **kwargs: (lambda func: func) # type: ignore # Dummy decorator
+    prange = range # type: ignore # Fallback to regular range
+    NUMBA_AVAILABLE = False
 import torch.jit
 
 
@@ -42,7 +54,7 @@ class PerformanceOptimizer:
         self.metrics = {
             'cache_hits': 0,
             'cache_misses': 0,
-            'avg_prediction_time': 0,
+            'avg_prediction_time': 0.0,
             'total_predictions': 0
         }
         
@@ -130,7 +142,7 @@ class PerformanceOptimizer:
         return wrapper
     
     @staticmethod
-    @jit(nopython=True, parallel=True, cache=True)
+    @jit(nopython=True, parallel=True, cache=True) if NUMBA_AVAILABLE else staticmethod
     def fast_glucose_prediction(history: np.ndarray, horizon: int) -> float:
         """
         Ultra-fast glucose prediction using Numba JIT compilation.
@@ -144,7 +156,7 @@ class PerformanceOptimizer:
         """
         n = len(history)
         if n < 3:
-            return history[-1] if n > 0 else 120.0
+            return float(history[-1]) if n > 0 else 120.0
         
         # Fast linear regression with Numba
         x = np.arange(n, dtype=np.float64)
@@ -158,12 +170,14 @@ class PerformanceOptimizer:
         numerator = 0.0
         denominator = 0.0
         
-        for i in prange(n):
+        # Use numba.prange if available, otherwise regular range
+        _range = prange if NUMBA_AVAILABLE else range
+        for i in _range(n):
             numerator += (x[i] - x_mean) * (y[i] - y_mean)
             denominator += (x[i] - x_mean) ** 2
         
         if denominator == 0:
-            return y_mean
+            return float(y_mean)
         
         slope = numerator / denominator
         intercept = y_mean - slope * x_mean
@@ -173,7 +187,7 @@ class PerformanceOptimizer:
         prediction = slope * future_x + intercept
         
         # Constrain to realistic range
-        return max(40.0, min(400.0, prediction))
+        return float(max(40.0, min(400.0, prediction)))
     
     async def parallel_predict_batch(self, patient_data: List[Dict]) -> List[float]:
         """
@@ -305,7 +319,7 @@ class FastDataLoader:
         self.num_workers = num_workers
         
     @staticmethod
-    @jit(nopython=True, parallel=True)
+    @jit(nopython=True, parallel=True) if NUMBA_AVAILABLE else staticmethod
     def normalize_batch(data: np.ndarray) -> np.ndarray:
         """Fast batch normalization με Numba."""
         mean = np.mean(data)
@@ -315,8 +329,10 @@ class FastDataLoader:
             return data - mean
         
         normalized = np.empty_like(data)
-        for i in prange(data.shape[0]):
-            for j in prange(data.shape[1]):
+        # Use numba.prange if available, otherwise regular range
+        _range = prange if NUMBA_AVAILABLE else range
+        for i in _range(data.shape[0]):
+            for j in _range(data.shape[1]):
                 normalized[i, j] = (data[i, j] - mean) / std
         
         return normalized

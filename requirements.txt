@@ -18,7 +18,7 @@ torchdiffeq>=0.2.3  # Neural ODEs
 
 # Time Series Analysis
 statsmodels>=0.13.0
-prophet>=1.0.0
+prophet==1.1.5 # Pinned to a newer stable version to potentially resolve pystan build issues
 pmdarima>=1.8.0
 
 # Reinforcement Learning

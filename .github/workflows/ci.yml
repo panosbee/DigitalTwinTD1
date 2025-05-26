@@ -100,7 +100,7 @@ jobs:
         make html
     
     - name: Upload docs artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.2
       with:
         name: documentation
         path: docs/_build/html/ 

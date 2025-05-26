@@ -36,6 +36,12 @@ prediction = sdk.predict_glucose(horizon_minutes=30)
 - **<1ms latency**: Real-time predictions
 - **Auto-adaptation**: Learns from each patient
 
+### 🧠 Cognitive Agent Layer (New in v1.1.0)
+- **Pattern Recognition**: Encodes glucose patterns into "cognitive fingerprints".
+- **Contextual Memory**: Stores and retrieves similar past patterns to inform predictions.
+- **Enhanced Understanding**: Foundation for explaining glucose events and adapting strategies.
+- **Optional Integration**: Enable via `use_agent=True` in `DigitalTwinSDK`.
+
 ### 📱 Universal Device Support (20+ devices)
 - **CGM**: Dexcom G6/G7, Freestyle Libre 1/2/3, Guardian 3/4
 - **Pumps**: Omnipod DASH/5, t:slim X2, Medtronic 670G/770G/780G

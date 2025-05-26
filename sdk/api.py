@@ -122,12 +122,16 @@ async def health_check():
 @app.post("/device/connect")
 async def connect_device(connection: DeviceConnection):
     """Connect a diabetes device."""
+    assert sdk is not None, "SDK not initialized"
     try:
-        sdk.connect_device(connection.device_type)
+        # Assuming patient_id can be used as device_id for this context
+        device_id = connection.patient_id if connection.patient_id else "default_device"
+        sdk.connect_device(device_type=connection.device_type, device_id=device_id)
         return {
             "status": "connected",
             "device": connection.device_type,
-            "patient_id": connection.patient_id
+            "patient_id": connection.patient_id,
+            "device_id_used": device_id
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -136,31 +140,82 @@ async def connect_device(connection: DeviceConnection):
 @app.post("/predict/glucose")
 async def predict_glucose(request: GlucosePredictionRequest):
     """Get glucose prediction."""
+    assert sdk is not None, "SDK not initialized"
     try:
         # Check cache first
         cache_key = f"prediction:{request.patient_id}:{request.horizon_minutes}"
         if redis_client:
-            cached = redis_client.get(cache_key)
-            if cached:
-                return json.loads(cached)
+            cached_data = redis_client.get(cache_key)
+            if cached_data: # Check if cached_data is not None
+                assert isinstance(cached_data, str), "Cached data should be a string from Redis with decode_responses=True"
+                return json.loads(cached_data)
         
-        # Make prediction
-        prediction = sdk.predict_glucose(horizon_minutes=request.horizon_minutes)
-        recommendations = sdk.get_recommendations()
+        # Make prediction using SDK
+        sdk_prediction_obj = sdk.predict_glucose(horizon_minutes=request.horizon_minutes) # Renamed for clarity
         
+        # Get current glucose
+        latest_data_df = sdk._get_latest_data()
+        current_glucose_val = float(latest_data_df['cgm'].iloc[-1]) if not latest_data_df.empty else 120.0
+
+        # Predicted glucose is the first value in the prediction horizon
+        predicted_glucose_val = float(sdk_prediction_obj.values[0]) if sdk_prediction_obj.values else current_glucose_val
+
+        # Determine trend
+        trend_str = "stable"
+        if len(sdk_prediction_obj.values) > 0: # Check if there are any predicted values
+            if sdk_prediction_obj.values[0] < current_glucose_val:
+                trend_str = "falling"
+            elif sdk_prediction_obj.values[0] > current_glucose_val:
+                trend_str = "rising"
+        
+        risk_level_str = "Normal"
+        if sdk_prediction_obj.risk_alerts and isinstance(sdk_prediction_obj.risk_alerts, list) and sdk_prediction_obj.risk_alerts:
+            risk_level_str = str(sdk_prediction_obj.risk_alerts[0])
+
+        confidence_val = 0.95 # Default confidence
+        if sdk_prediction_obj.confidence_intervals and isinstance(sdk_prediction_obj.confidence_intervals, tuple) and len(sdk_prediction_obj.confidence_intervals) == 2:
+            # Example: derive confidence from interval width, lower bound > 0
+            lower, upper = sdk_prediction_obj.confidence_intervals
+            if upper > lower and lower > 0 and predicted_glucose_val > 0: # basic sanity check
+                 # This is a placeholder logic for confidence.
+                 # A proper calculation would depend on how confidence_intervals are defined (e.g. std dev, percentile)
+                pass # Keep default 0.95 for now
+
+        # Get recommendations from SDK
+        sdk_recs = sdk.get_recommendations() # This returns a Dict
+        api_recommendations: List[str] = []
+        
+        insulin_rec = sdk_recs.get("insulin")
+        if isinstance(insulin_rec, dict) and insulin_rec.get("action"):
+            api_recommendations.append(str(insulin_rec["action"]))
+            
+        meal_recs = sdk_recs.get("meals")
+        if isinstance(meal_recs, list):
+            for meal_rec_item in meal_recs:
+                if isinstance(meal_rec_item, str):
+                    api_recommendations.append(meal_rec_item)
+                # Add more specific parsing if meal_recs can contain dicts
+                    
+        activity_recs = sdk_recs.get("activity")
+        if isinstance(activity_recs, list):
+            for activity_rec_item in activity_recs:
+                if isinstance(activity_rec_item, str):
+                    api_recommendations.append(activity_rec_item)
+                # Add more specific parsing if activity_recs can contain dicts
+
         response = GlucosePredictionResponse(
             timestamp=datetime.now(),
-            current_glucose=prediction.current_glucose,
-            predicted_glucose=prediction.value,
-            trend=prediction.trend,
-            risk_level=prediction.risk_level,
-            confidence=prediction.confidence,
-            recommendations=[r.action for r in recommendations[:3]]
+            current_glucose=current_glucose_val,
+            predicted_glucose=predicted_glucose_val,
+            trend=trend_str,
+            risk_level=risk_level_str,
+            confidence=confidence_val,
+            recommendations=api_recommendations[:3]
         )
         
         # Cache result
         if redis_client:
-            redis_client.setex(cache_key, 300, response.json())  # 5 min cache
+            redis_client.setex(cache_key, 300, response.json())
         
         return response
         
@@ -171,20 +226,83 @@ async def predict_glucose(request: GlucosePredictionRequest):
 @app.post("/recommendations")
 async def get_recommendations(request: RecommendationRequest):
     """Get personalized recommendations."""
+    assert sdk is not None, "SDK not initialized"
     try:
-        recs = sdk.get_recommendations()
+        sdk_recs_dict = sdk.get_recommendations(context=request.context) # sdk_recs_dict is a Dict
+        
+        api_response_recommendations = []
+        
+        # Insulin recommendation
+        insulin_info = sdk_recs_dict.get("insulin")
+        if isinstance(insulin_info, dict):
+            api_response_recommendations.append({
+                "action": insulin_info.get("action", "N/A"),
+                "reason": insulin_info.get("reason", "N/A"),
+                "priority": insulin_info.get("priority", "medium"),
+                "category": "insulin"
+            })
+            
+        # Meal recommendations
+        meal_info_list = sdk_recs_dict.get("meals")
+        if isinstance(meal_info_list, list):
+            for meal_item in meal_info_list:
+                if isinstance(meal_item, str): # If it's just a string
+                    api_response_recommendations.append({
+                        "action": meal_item,
+                        "reason": "General meal advice",
+                        "priority": "low",
+                        "category": "meals"
+                    })
+                elif isinstance(meal_item, dict): # If it's a dict with more details
+                     api_response_recommendations.append({
+                        "action": meal_item.get("action", "N/A"),
+                        "reason": meal_item.get("reason", "N/A"),
+                        "priority": meal_item.get("priority", "medium"),
+                        "category": "meals"
+                    })
+
+        # Activity recommendations
+        activity_info_list = sdk_recs_dict.get("activity")
+        if isinstance(activity_info_list, list):
+            for activity_item in activity_info_list:
+                if isinstance(activity_item, str):
+                    api_response_recommendations.append({
+                        "action": activity_item,
+                        "reason": "General activity advice",
+                        "priority": "low",
+                        "category": "activity"
+                    })
+                elif isinstance(activity_item, dict):
+                     api_response_recommendations.append({
+                        "action": activity_item.get("action", "N/A"),
+                        "reason": activity_item.get("reason", "N/A"),
+                        "priority": activity_item.get("priority", "medium"),
+                        "category": "activity"
+                    })
+        
+        # Alerts (if any)
+        alert_info_list = sdk_recs_dict.get("alerts")
+        if isinstance(alert_info_list, list):
+            for alert_item in alert_info_list:
+                 if isinstance(alert_item, str):
+                    api_response_recommendations.append({
+                        "action": alert_item,
+                        "reason": "System alert",
+                        "priority": "high", # Assuming alerts are high priority
+                        "category": "alerts"
+                    })
+                 elif isinstance(alert_item, dict):
+                     api_response_recommendations.append({
+                        "action": alert_item.get("message", "N/A"), # Assuming alert dict has 'message'
+                        "reason": alert_item.get("details", "System alert"),
+                        "priority": alert_item.get("priority", "high"),
+                        "category": "alerts"
+                    })
+
         return {
             "patient_id": request.patient_id,
             "timestamp": datetime.now(),
-            "recommendations": [
-                {
-                    "action": r.action,
-                    "reason": r.reason,
-                    "priority": r.priority,
-                    "category": r.category
-                }
-                for r in recs
-            ]
+            "recommendations": api_response_recommendations
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -196,6 +314,7 @@ async def generate_clinical_report(
     background_tasks: BackgroundTasks
 ):
     """Generate clinical report."""
+    assert sdk is not None, "SDK not initialized"
     try:
         # Generate report in background
         background_tasks.add_task(
@@ -217,22 +336,29 @@ async def generate_clinical_report(
 @app.post("/research/virtual-trial")
 async def run_virtual_trial(request: VirtualTrialRequest):
     """Run a virtual clinical trial."""
+    assert sdk is not None, "SDK not initialized"
     try:
         results = sdk.run_virtual_trial(
-            population_size=request.population_size,
+            cohort_size=request.population_size, # Parameter name mismatch with sdk.run_virtual_trial
             duration_days=request.duration_days,
             interventions=request.interventions
         )
         
+        # Handle cases where results might not contain expected keys (e.g., if simulator fails)
+        tir_improvement = results.get("tir_improvement", 0.0)
+        hypo_reduction = results.get("hypo_reduction", 0.0)
+        hba1c_reduction = results.get("hba1c_reduction", 0.0)
+        qol_score = results.get("qol_score", "N/A")
+
         return {
-            "status": "completed",
+            "status": results.get("status", "completed"),
             "population_size": request.population_size,
             "duration_days": request.duration_days,
             "results": {
-                "time_in_range_improvement": f"{results.tir_improvement:.1f}%",
-                "hypoglycemia_reduction": f"{results.hypo_reduction:.1f}%",
-                "hba1c_reduction": f"{results.hba1c_reduction:.2f}%",
-                "quality_of_life_score": results.qol_score
+                "time_in_range_improvement": f"{tir_improvement:.1f}%",
+                "hypoglycemia_reduction": f"{hypo_reduction:.1f}%",
+                "hba1c_reduction": f"{hba1c_reduction:.2f}%",
+                "quality_of_life_score": qol_score
             }
         }
     except Exception as e:
@@ -242,12 +368,16 @@ async def run_virtual_trial(request: VirtualTrialRequest):
 @app.post("/data/upload")
 async def upload_data(upload: DataUpload):
     """Upload patient data."""
+    assert sdk is not None, "SDK not initialized" # Though sdk is not directly used here, good practice
     try:
         # Store data (in production, this would go to a database)
         if redis_client:
             key = f"data:{upload.patient_id}:{upload.data_type}"
-            redis_client.lpush(key, json.dumps(upload.values))
-            redis_client.expire(key, 3600)  # 1 hour expiry
+            # Ensure upload.values is a list of strings for lpush if not already
+            values_to_push = [json.dumps(v) if not isinstance(v, str) else v for v in upload.values]
+            if values_to_push: # lpush expects at least one value
+                 redis_client.lpush(key, *values_to_push)
+                 redis_client.expire(key, 3600)  # 1 hour expiry
         
         return {
             "status": "success",

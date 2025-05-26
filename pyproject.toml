@@ -95,8 +95,12 @@ optimization = [
     "ray[tune]>=2.0",
 ]
 
+mamba = [ # New optional dependency group for Mamba
+    "mamba-ssm==1.2.0"
+]
+
 all = [
-    "digital-twin-t1d[dev,docs,examples,simulation,optimization]"
+    "digital-twin-t1d[dev,docs,examples,simulation,optimization,mamba]" # Added mamba to 'all'
 ]
 
 [project.urls]

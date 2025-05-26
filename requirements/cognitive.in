@@ -1,0 +1,11 @@
+# Dependencies for the Cognitive Agent Layer
+
+# mamba-ssm (State Space Models)
+# Install only on Python < 3.12 due to wheel availability
+# For Windows Py<3.12, use mamba-ssm-cpu
+# For Linux/Mac Py<3.12, use mamba-ssm (will pick GPU or CPU wheel if available)
+mamba-ssm-cpu>=1.1.1,<1.11.0 ; python_version < "3.12" and platform_system == "Windows"
+mamba-ssm>=1.1.1,<1.11.0     ; python_version < "3.12" and platform_system != "Windows"
+
+# Other potential cognitive layer specific dependencies can be added here
+# For now, scikit-learn (for NearestNeighbors) and torch are in base.in

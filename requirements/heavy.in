@@ -1,0 +1,26 @@
+# "Heavy" or potentially platform-sensitive dependencies
+
+# TensorFlow: Using tensorflow-cpu for broader compatibility initially.
+# TF 2.16 requires Python 3.9+
+# TF 2.13 was last for Python 3.8
+tensorflow-cpu>=2.16.0 ; python_version >= "3.9"
+tensorflow==2.13.0     ; python_version < "3.9" # For Python 3.8
+
+# Matplotlib and its ecosystem (which pulls contourpy)
+matplotlib>=3.5.0,<3.8.0 # Constrained for Py3.8 contourpy compatibility
+
+# Deep Learning & Transformers
+transformers>=4.20.0
+accelerate>=0.20.0  # HuggingFace accelerate
+
+# Performance Optimization
+numba>=0.56.0  # JIT compilation
+
+# Dashboarding & Visualization
+dash>=2.6.0
+streamlit>=1.12.0
+dash-bootstrap-components>=1.2.0 # Moved here as it depends on dash
+dash-daq>=0.5.0 # Moved here as it depends on dash
+
+# Tensorboard (usually comes with tensorflow, but can be explicit)
+tensorboard>=2.10.0

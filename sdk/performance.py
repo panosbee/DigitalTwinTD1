@@ -79,7 +79,7 @@ class PerformanceOptimizer:
     def cache_key(self, *args, **kwargs):
         """Generate cache key from arguments."""
         key_data = str(args) + str(sorted(kwargs.items()))
-        return hashlib.md5(key_data.encode()).hexdigest()
+        return hashlib.md5(key_data.encode(), usedforsecurity=False).hexdigest() # Added usedforsecurity=False
     
     def cached_prediction(self, func: Callable) -> Callable:
         """Decorator for caching predictions."""

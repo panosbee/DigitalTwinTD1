@@ -41,7 +41,7 @@
     celery>=5.2.0
 
     # Visualization και Monitoring
-    matplotlib>=3.5.0
+    matplotlib>=3.5.0,<3.9.0 # Constrain to avoid forcing contourpy >1.2.1 (for py3.8 compat)
     seaborn>=0.11.0
     plotly>=5.0.0
     wandb>=0.13.0

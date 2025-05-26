@@ -260,7 +260,7 @@ markupsafe==3.0.2
     #   jinja2
     #   mako
     #   werkzeug
-matplotlib==3.10.3
+matplotlib==3.8.4
     # via
     #   -r requirements.in
     #   causal-learn

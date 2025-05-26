@@ -38,7 +38,7 @@ dowhy>=0.8.0
 simglucose>=0.2.9 # Pinned to avoid faulty 0.2.8 source distribution
 
 # Explainable AI
-shap>=0.41.0
+shap==0.40.0 # Pinned to resolve conflict with econml 0.14.0
 lime>=0.2.0
 
 # Real-time και Deployment

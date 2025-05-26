@@ -123,7 +123,15 @@ class ARIMAModel(BaseModel):
             y = y.interpolate().fillna(method="bfill").fillna(method="ffill")
 
         # Αυτόματη επιλογή παραμέτρων αν ζητείται
-        if self.auto_arima:
+        # If auto_arima is true and data is very short, use a simple fixed order
+        # to prevent instability from auto_arima on minimal data (e.g. during auto-training in tests)
+        MIN_SAMPLES_FOR_AUTO_ARIMA = 50
+        if self.auto_arima and len(y) < MIN_SAMPLES_FOR_AUTO_ARIMA:
+            print(
+                f"Σύντομη σειρά δεδομένων ({len(y)} samples), χρήση σταθερής τάξης ARIMA (1,1,0) αντί για auto_arima."
+            )
+            self.best_order = (1, 1, 0)
+        elif self.auto_arima:
             print("Αναζήτηση βέλτιστων παραμέτρων ARIMA...")
             self.best_order = self._find_best_order(y)
             print(f"Βέλτιστες παράμετροι: {self.best_order}")

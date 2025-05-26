@@ -85,7 +85,7 @@ examples = [
 
 simulation = [
     "simpy>=4.0",
-    "gym>=0.21.0",
+    # "gym>=0.21.0", # Removed in favor of gymnasium from main requirements
     "control>=0.9.0",
 ]
 

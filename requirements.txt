@@ -7,7 +7,7 @@ seaborn>=0.11.0
 plotly>=5.0.0
 
 # Machine Learning frameworks
-scikit-learn>=1.0.0
+scikit-learn==1.3.2 # Pinned to a more recent version to avoid distutils build issues
 torch>=1.10.0
 tensorflow==2.13.0 # Pinned to ensure tensorflow-macos compatibility on arm64
 

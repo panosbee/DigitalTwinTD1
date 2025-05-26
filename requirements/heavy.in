@@ -1,0 +1,48 @@
+# "Heavy" or potentially platform-sensitive dependencies
+
+# TensorFlow: Using tensorflow-cpu for broader compatibility initially.
+# TF 2.16 requires Python 3.9+
+# TF 2.13 was last for Python 3.8
+# TensorFlow: tensorflow-cpu for general compatibility, tensorflow-intel for specific optimizations.
+# TF 2.16+ requires Python 3.9+
+# TF 2.13 was last for Python 3.8
+tensorflow-cpu>=2.16.0           ; python_version >= "3.9"
+tensorflow==2.13.0               ; python_version < "3.9"
+# tensorflow-intel for specific CI runners if needed and available:
+tensorflow-intel==2.16.2         ; python_version >= "3.10" and platform_system != "Darwin" and platform_system != "Windows" # Example for Linux Py3.10+
+# For Windows Py3.10+, tensorflow-cpu should already cover it. If -intel is specifically desired:
+# tensorflow-intel==2.16.2       ; python_version >= "3.10" and platform_system == "Windows"
+
+
+# Matplotlib and its ecosystem (which pulls contourpy)
+# contourpy 1.3.2 requires Py >= 3.10
+# contourpy 1.3.0 is compatible with Py < 3.10
+# matplotlib < 3.8.0 should pull in a compatible contourpy for Py3.8/3.9
+matplotlib>=3.5.0,<3.8.0 # This should be fine for Py3.8, Py3.9
+# If newer matplotlib is needed for Py3.10+ and it pulls contourpy 1.3.2, that's okay.
+# The key is that pip-compile on Py3.12 will generate a requirements/heavy.txt
+# that pins contourpy based on what matplotlib it selects.
+# The CI for Py3.8/3.9 will then use that requirements/heavy.txt.
+# If matplotlib<3.8.0 (pinned by Py3.12 pip-compile) pulls contourpy 1.2.x, it's fine for all.
+# If matplotlib 3.8.x (pinned by Py3.12 pip-compile) pulls contourpy 1.3.0, it's fine for all.
+# The issue arises if matplotlib 3.8.x (pinned by Py3.12 pip-compile) pulls contourpy 1.3.2.
+# To be absolutely safe for the CI runners < Py3.10:
+contourpy==1.3.0                 ; python_version < "3.10"
+contourpy>=1.3.1                 ; python_version >= "3.10" # Allow 1.3.1 or 1.3.2 for newer Py
+matplotlib>=3.5.0 # Let matplotlib decide based on the contourpy available for the Python version
+
+# Deep Learning & Transformers
+transformers>=4.20.0
+accelerate>=0.20.0  # HuggingFace accelerate
+
+# Performance Optimization
+numba>=0.56.0  # JIT compilation
+
+# Dashboarding & Visualization
+dash>=2.6.0
+streamlit>=1.12.0
+dash-bootstrap-components>=1.2.0 # Moved here as it depends on dash
+dash-daq>=0.5.0 # Moved here as it depends on dash
+
+# Tensorboard (usually comes with tensorflow, but can be explicit)
+tensorboard>=2.10.0

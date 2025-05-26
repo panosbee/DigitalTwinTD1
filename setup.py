@@ -9,12 +9,12 @@ using state-of-the-art AI and machine learning techniques.
 from setuptools import setup, find_packages
 
 # Read requirements from requirements.txt
-with open('requirements.txt', 'r', encoding='utf-8') as f:
-    requirements = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+with open("requirements.txt", "r", encoding="utf-8") as f:
+    requirements = [line.strip() for line in f if line.strip() and not line.startswith("#")]
 
 # Read README for long description
 try:
-    with open('README.md', 'r', encoding='utf-8') as f:
+    with open("README.md", "r", encoding="utf-8") as f:
         long_description = f.read()
 except FileNotFoundError:
     long_description = __doc__
@@ -43,7 +43,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9", 
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Operating System :: OS Independent",
@@ -104,7 +104,7 @@ setup(
             "mypy>=0.971",
             "jupyter>=1.0.0",
             "sphinx>=5.0.0",
-        ]
+        ],
     },
     entry_points={
         "console_scripts": [
@@ -118,9 +118,18 @@ setup(
         "data": ["*.csv", "*.h5", "*.parquet"],
     },
     keywords=[
-        "diabetes", "type-1-diabetes", "digital-twin", "machine-learning", 
-        "artificial-intelligence", "glucose-prediction", "insulin-optimization",
-        "reinforcement-learning", "healthcare", "medical-ai", "cgm", "glucose-monitoring"
+        "diabetes",
+        "type-1-diabetes",
+        "digital-twin",
+        "machine-learning",
+        "artificial-intelligence",
+        "glucose-prediction",
+        "insulin-optimization",
+        "reinforcement-learning",
+        "healthcare",
+        "medical-ai",
+        "cgm",
+        "glucose-monitoring",
     ],
     zip_safe=False,
-) 
+)

@@ -16,31 +16,34 @@ from .baseline import ARIMAModel, ProphetModel
 # Try to import advanced models
 try:
     from .advanced import (
-        MambaModel, MambaGlucosePredictor,
-        NeuralODEModel, NeuralODEGlucoseModel,
-        MultiModalModel, MultiModalTransformer,
-        EdgeOptimizedModel
+        MambaModel,
+        MambaGlucosePredictor,
+        NeuralODEModel,
+        NeuralODEGlucoseModel,
+        MultiModalModel,
+        MultiModalTransformer,
+        EdgeOptimizedModel,
     )
+
     ADVANCED_AVAILABLE = True
 except ImportError:
     ADVANCED_AVAILABLE = False
 
-__all__ = [
-    'MechanisticModel',
-    'LSTMModel', 
-    'TransformerModel',
-    'ARIMAModel',
-    'ProphetModel'
-]
+__all__ = ["MechanisticModel", "LSTMModel", "TransformerModel", "ARIMAModel", "ProphetModel"]
 
 # Add advanced models if available
 if ADVANCED_AVAILABLE:
-    __all__.extend([
-        'MambaModel', 'MambaGlucosePredictor',
-        'NeuralODEModel', 'NeuralODEGlucoseModel', 
-        'MultiModalModel', 'MultiModalTransformer',
-        'EdgeOptimizedModel'
-    ])
+    __all__.extend(
+        [
+            "MambaModel",
+            "MambaGlucosePredictor",
+            "NeuralODEModel",
+            "NeuralODEGlucoseModel",
+            "MultiModalModel",
+            "MultiModalTransformer",
+            "EdgeOptimizedModel",
+        ]
+    )
 
 __version__ = "2.0.0"
-__author__ = "Digital Twin T1D Consortium" 
+__author__ = "Digital Twin T1D Consortium"

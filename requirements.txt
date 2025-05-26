@@ -9,7 +9,7 @@ plotly>=5.0.0
 # Machine Learning frameworks
 scikit-learn>=1.0.0
 torch>=1.10.0
-tensorflow>=2.8.0
+tensorflow==2.13.0 # Pinned to ensure tensorflow-macos compatibility on arm64
 
 # Deep Learning για Advanced Models
 transformers>=4.20.0

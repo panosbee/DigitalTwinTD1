@@ -71,7 +71,7 @@ except ImportError:
 
 # Try to import advanced models για integration
 try:
-    from models.advanced import MambaModel, NeuralODEModel, MultiModalModel
+    from models.advanced import MambaModel, NeuralODEModel, MultiModalModel # noqa: F401
     ADVANCED_MODELS_AVAILABLE = True
 except ImportError:
     ADVANCED_MODELS_AVAILABLE = False
@@ -295,7 +295,7 @@ class AgentsShowcase:
                 
                 # Quick training (reduced timesteps για demo)
                 print(f"   🏋️ Training για {config.total_timesteps} timesteps...")
-                agent.learn(total_timesteps=config.total_timesteps) # F841: training_metrics was unused
+                agent.learn(total_timesteps=config.total_timesteps) # Ensure training_metrics is handled if it was F841
                 
                 # Evaluate agent
                 eval_metrics = agent.evaluate_policy(self.env, n_episodes=5)
@@ -479,7 +479,6 @@ class AgentsShowcase:
                     print(f"   • {agent_name}: {violations} violations, Safety Score: {safety_score:.2f}")
             else:
                 print("   • Mock Safety Scores: All agents >0.95")
-            
             print("\n🎉 Safety monitoring demo completed!")
             
         except Exception as e:

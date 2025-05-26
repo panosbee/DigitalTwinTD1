@@ -137,8 +137,8 @@ class LSTMModel(BaseModel):
     def _prepare_sequences(self, X: pd.DataFrame, y: Optional[pd.Series] = None) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """Δημιουργία ακολουθιών για LSTM."""
         X_sequences = []
-        y_sequences = [] if y is not None else None
-        
+        y_sequences_list: List[Any] = [] # Initialize as a list
+
         for i in range(len(X) - self.sequence_length + 1):
             X_seq = X.iloc[i:i + self.sequence_length].values
             X_sequences.append(X_seq)
@@ -147,15 +147,40 @@ class LSTMModel(BaseModel):
                 # Για training, παίρνουμε την επόμενη τιμή
                 if i + self.sequence_length < len(y):
                     y_seq = y.iloc[i + self.sequence_length]
-                    y_sequences.append(y_seq)
+                    y_sequences_list.append(y_seq)
                 else:
+                    # This break might lead to X_sequences having one more item than y_sequences_list
+                    # if the loop for X continues but y runs out.
+                    # Consider aligning lengths or handling this case.
+                    # For now, let's ensure X_sequences is trimmed if y_sequences_list is shorter.
+                    if len(X_sequences) > len(y_sequences_list):
+                        X_sequences.pop() # Remove the last X_seq if no corresponding y_seq
                     break
         
-        X_sequences = np.array(X_sequences)
-        if y_sequences:
-            y_sequences = np.array(y_sequences)
+        final_X_sequences = np.array(X_sequences)
         
-        return X_sequences, y_sequences
+        final_y_sequences: Optional[np.ndarray] = None
+        if y is not None: # Only try to convert y_sequences if y was provided
+            if y_sequences_list: # If list is not empty
+                final_y_sequences = np.array(y_sequences_list)
+            else: # If y was provided but no sequences were made (e.g. too short)
+                  # This might indicate an issue or edge case.
+                  # For now, if y_sequences_list is empty, final_y_sequences remains None.
+                  # If X_sequences is not empty, this would be a mismatch.
+                  # Let's ensure X is also empty in this specific sub-case.
+                  if len(final_X_sequences) > 0 and not y_sequences_list :
+                      # This implies y was too short to form any y_seq for the existing X_seq
+                      # This should ideally not happen if X and y are from the same source and length
+                      # Or if X_sequences was trimmed correctly above.
+                      # If X_sequences is non-empty and y_sequences_list is empty, it's an issue.
+                      # For safety, if y was provided but y_sequences_list is empty, make X_sequences empty too.
+                      # This handles cases where y is shorter than sequence_length.
+                      if not y_sequences_list and len(final_X_sequences) > 0 :
+                           final_X_sequences = np.array([]) # Make X empty to match
+                           pass
+
+
+        return final_X_sequences, final_y_sequences
     
     def fit(self, X: pd.DataFrame, y: pd.Series, **kwargs) -> 'LSTMModel':
         """
@@ -175,7 +200,7 @@ class LSTMModel(BaseModel):
             index=X.index
         )
         y_scaled = pd.Series(
-            self.scaler_y.fit_transform(y.values.reshape(-1, 1)).flatten(),
+            self.scaler_y.fit_transform(y.to_numpy().reshape(-1, 1)).flatten(),
             index=y.index
         )
         

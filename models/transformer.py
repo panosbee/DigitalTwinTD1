@@ -286,8 +286,8 @@ class TransformerModel(BaseModel):
     def _prepare_sequences(self, X: pd.DataFrame, y: Optional[pd.Series] = None) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """Δημιουργία ακολουθιών για Transformer."""
         X_sequences = []
-        y_sequences = [] if y is not None else None
-        
+        y_sequences_list: List[Any] = [] # Initialize as a list
+
         for i in range(len(X) - self.sequence_length + 1):
             X_seq = X.iloc[i:i + self.sequence_length].values
             X_sequences.append(X_seq)
@@ -295,15 +295,23 @@ class TransformerModel(BaseModel):
             if y is not None:
                 if i + self.sequence_length < len(y):
                     y_seq = y.iloc[i + self.sequence_length]
-                    y_sequences.append(y_seq)
+                    y_sequences_list.append(y_seq)
                 else:
+                    if len(X_sequences) > len(y_sequences_list):
+                        X_sequences.pop()
                     break
         
-        X_sequences = np.array(X_sequences)
-        if y_sequences:
-            y_sequences = np.array(y_sequences)
+        final_X_sequences = np.array(X_sequences)
         
-        return X_sequences, y_sequences
+        final_y_sequences: Optional[np.ndarray] = None
+        if y is not None:
+            if y_sequences_list:
+                final_y_sequences = np.array(y_sequences_list)
+            else:
+                if len(final_X_sequences) > 0 and not y_sequences_list:
+                     final_X_sequences = np.array([])
+        
+        return final_X_sequences, final_y_sequences
     
     def fit(self, X: pd.DataFrame, y: pd.Series, **kwargs) -> 'TransformerModel':
         """
@@ -323,7 +331,7 @@ class TransformerModel(BaseModel):
             index=X.index
         )
         y_scaled = pd.Series(
-            self.scaler_y.fit_transform(y.values.reshape(-1, 1)).flatten(),
+            self.scaler_y.fit_transform(y.to_numpy().reshape(-1, 1)).flatten(),
             index=y.index
         )
         
@@ -532,10 +540,15 @@ class TransformerModel(BaseModel):
         X_sequences, _ = self._prepare_sequences(X_scaled)
         if len(X_sequences) == 0:
             return None
+
+        # After is_fitted and not hybrid checks, self.model should be a TimeSeriesTransformer
+        assert self.model is not None, "Model should be fitted and not hybrid here."
+        assert isinstance(self.model, TimeSeriesTransformer), \
+               "Model must be a TimeSeriesTransformer to get attention weights."
         
         self.model.eval()
         with torch.no_grad():
-            X_tensor = torch.FloatTensor(X_sequences[:1]).to(self.device)
+            X_tensor = torch.FloatTensor(X_sequences[:1]).to(self.device) # Using only the first sequence for example
             _, attention_weights = self.model(X_tensor)
         
         return attention_weights

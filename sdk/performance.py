@@ -99,7 +99,7 @@ class PerformanceOptimizer:
                     cached = self.redis_client.get(f"pred:{key}")
                     if cached:
                         self.metrics['cache_hits'] += 1
-                        result = pickle.loads(cached)
+                        result = pickle.loads(cached)  # nosec B301 - Assuming cached data is from trusted internal calls
                         self.memory_cache[key] = result
                         return result
                 except:

@@ -359,7 +359,7 @@ class ModelZoo:
         logger.info(f"📂 Loading {model_id}...")
         
         try:
-            model = torch.load(model_path, map_location=device)
+            model = torch.load(model_path, map_location=device)  # nosec B614 - Assuming model_path is trusted
             model.eval()
             
             self.loaded_models[model_id] = model

@@ -450,7 +450,7 @@ class RealTimeDashboard:
     def run(self):
         """Run the dashboard."""
         print(f"🚀 Starting Digital Twin T1D Dashboard on http://localhost:{self.port}")
-        self.app.run_server(host='0.0.0.0', port=self.port, debug=False)
+        self.app.run_server(host='0.0.0.0', port=self.port, debug=False)  # nosec B104 - Intentionally binding to all interfaces
 
 
 # CSS Styling

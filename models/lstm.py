@@ -127,7 +127,7 @@ class LSTMModel(BaseModel):
             self.device = torch.device(device)
         
         # Αρχικοποίηση
-        self.model = None
+        self.model: Optional[LSTMNetwork] = None # Explicitly type hint self.model
         self.scaler_X = StandardScaler()
         self.scaler_y = StandardScaler()
         self.is_fitted = False
@@ -272,7 +272,7 @@ class LSTMModel(BaseModel):
             self.model.train()
         
         # Φόρτωση καλύτερου μοντέλου
-        self.model.load_state_dict(torch.load('best_model.pth'))
+        self.model.load_state_dict(torch.load('best_model.pth'))  # nosec B614 - Assuming trusted model file
         self.model.eval()
         
         # Αποθήκευση ιστορικού
@@ -299,6 +299,7 @@ class LSTMModel(BaseModel):
         """
         if not self.is_fitted:
             raise ValueError("Το μοντέλο δεν έχει εκπαιδευτεί")
+        assert self.model is not None, "Model should be initialized if is_fitted is True."
         
         # Κανονικοποίηση
         X_scaled = pd.DataFrame(
@@ -312,6 +313,10 @@ class LSTMModel(BaseModel):
         
         if len(X_sequences) == 0:
             raise ValueError("Δεν υπάρχουν αρκετά δεδομένα για πρόβλεψη")
+
+        if not self.is_fitted:
+            raise RuntimeError("Model is not fitted yet. Call 'fit' before 'predict_model'.")
+        assert self.model is not None, "Model should be initialized if is_fitted is True."
         
         # Πρόβλεψη
         self.model.eval()

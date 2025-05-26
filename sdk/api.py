@@ -328,7 +328,7 @@ def main():
     """Run the API server."""
     uvicorn.run(
         "sdk.api:app",
-        host="0.0.0.0",
+        host="0.0.0.0",  # nosec B104 - Intentionally binding to all interfaces for accessibility
         port=8080,
         reload=True,
         log_level="info"

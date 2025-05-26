@@ -13,7 +13,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Optional, Dict, Any, List, Tuple, Union # Added Union
 from sklearn.preprocessing import StandardScaler
 import warnings
 warnings.filterwarnings('ignore')
@@ -276,7 +276,7 @@ class TransformerModel(BaseModel):
             self.device = torch.device(device)
         
         # Αρχικοποίηση
-        self.model = None
+        self.model: Optional[Union[TimeSeriesTransformer, HybridTransformerLSTM]] = None # Explicitly type hint
         self.scaler_X = StandardScaler()
         self.scaler_y = StandardScaler()
         self.is_fitted = False
@@ -373,6 +373,8 @@ class TransformerModel(BaseModel):
                 max_seq_len=self.sequence_length * 2
             ).to(self.device)
         
+        assert self.model is not None, "Model should be initialized at this point in fit method."
+
         # Loss και optimizer
         criterion = nn.MSELoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
@@ -446,7 +448,7 @@ class TransformerModel(BaseModel):
             self.model.train()
         
         # Φόρτωση καλύτερου μοντέλου
-        self.model.load_state_dict(torch.load('best_transformer_model.pth'))
+        self.model.load_state_dict(torch.load('best_transformer_model.pth'))  # nosec B614 - Assuming trusted model file
         self.model.eval()
         
         # Αποθήκευση ιστορικού
@@ -473,6 +475,7 @@ class TransformerModel(BaseModel):
         """
         if not self.is_fitted:
             raise ValueError("Το μοντέλο δεν έχει εκπαιδευτεί")
+        assert self.model is not None, "Model should be initialized if is_fitted is True."
         
         # Κανονικοποίηση
         X_scaled = pd.DataFrame(

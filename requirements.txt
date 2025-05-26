@@ -36,7 +36,7 @@ econml>=0.14.0
 dowhy>=0.8.0
 
 # Medical/Health specific
-simglucose>=0.2.1
+simglucose>=0.2.9 # Pinned to avoid faulty 0.2.8 source distribution
 
 # Explainable AI
 shap>=0.41.0

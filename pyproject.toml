@@ -4,104 +4,153 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "digital-twin-t1d"
-version = "1.1.0"
+version = "2.0.0" # Updated version
 authors = [
-    {name = "Digital Twin T1D Team", email = "contact@digital-twin-t1d.org"},
+    {name = "Panagiotis Skouras", email = "panos.skouras377@gmail.com"}, # Updated author
 ]
-description = "Βιβλιοθήκη ψηφιακού διδύμου για διαβήτη τύπου 1"
+description = "Plug-and-play AI & Cognitive Agent for Type-1 Diabetes" # Updated description
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.8"
+requires-python = ">=3.10" # Updated Python requirement
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta", # Updated status
     "Intended Audience :: Healthcare Industry",
     "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12", # Added 3.12
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 keywords = [
-    "diabetes", "type1", "digital-twin", "glucose-prediction", 
-    "cgm", "machine-learning", "healthcare", "biomedical"
+    "diabetes", "type1", "digital-twin", "glucose-prediction", "ai", "sdk",
+    "cgm", "machine-learning", "healthcare", "biomedical", "cognitive-agent"
 ]
 
 dependencies = [
-    # Core data science
-    "numpy>=1.21.0",
-    "pandas>=1.3.0",
-    "scipy>=1.7.0",
-    "scikit-learn>=1.0.0",
-    
-    # Deep learning
-    "torch>=1.10.0",
-    "torchvision>=0.11.0",
-    
-    # Time series & forecasting
-    "statsmodels>=0.13.0",
-    "prophet>=1.1.0",
-    
-    # Visualization
-    "matplotlib>=3.4.0",
-    "seaborn>=0.11.0",
-    "plotly>=5.0.0",
-    
-    # Utilities
+    # Core data science & utilities - minimal set for core SDK functionality
+    "numpy>=1.23", # As per agent's suggestion
+    "pandas>=1.5", # As per agent's suggestion
+    "scipy>=1.7.0", # From main's requirements
+    "pydantic>=1.10.0", # For data validation, used in sdk.core
+    "python-dotenv>=0.20.0",
     "tqdm>=4.62.0",
-    "pyyaml>=5.4.0",
     "joblib>=1.1.0",
+    "click==8.1.7", # Pinned for broader compatibility
+    "pluggy>=1.0.0",
+    "importlib-metadata>=6.0.0; python_version < '3.10'", # Already conditional
+    # Basic time series (might be needed by core models if not made optional)
+    "statsmodels>=0.13.0",
+    "pmdarima>=1.8.0", # Consider if this should be in an 'advanced_models' extra
+    # For sdk.api (FastAPI and Uvicorn)
+    "fastapi>=0.85.0",
+    "uvicorn>=0.18.0", # For running the API
+    "python-multipart>=0.0.6", # For FastAPI file uploads
+    "httpx>=0.24.0", # For FastAPI TestClient and general async HTTP
 ]
 
 [project.optional-dependencies]
+# Agent Layer specific dependencies
+cognitive = [
+  "scikit-learn>=1.0.0", # For NearestNeighbors in memory_store
+  "torch>=1.10.0",       # For GlucoseEncoder (LSTM)
+  # Mamba with PEP508 markers for platform and Python version
+  "mamba-ssm-cpu>=1.1.1,<1.11.0 ; python_version<'3.12' and platform_system=='Windows'",
+  "mamba-ssm>=1.1.1,<1.11.0     ; python_version<'3.12' and platform_system!='Windows'",
+  # faiss-cpu can be added here if used by VectorMemoryStore
+  # "faiss-cpu",
+]
+
+# "Heavy" dependencies for advanced models, full features, and visualization
+heavy = [
+  # TensorFlow (CPU for broader compatibility, specific version for Py3.8 if needed)
+  "tensorflow-cpu>=2.16.0 ; python_version>='3.9'",
+  "tensorflow==2.13.0     ; python_version<'3.9'", # For Py3.8 compatibility
+  # Matplotlib and contourpy with markers
+  "matplotlib>=3.5.0", # Let pip-compile pick best matplotlib
+  "contourpy==1.2.0          ; python_version<'3.10'", # Older contourpy for Py3.8/3.9
+  "contourpy>=1.3.1          ; python_version>='3.10'",# Newer contourpy for Py3.10+
+  # Other heavy/specialized packages
+  "torchvision>=0.11.0", # If used
+  "transformers>=4.20.0",
+  "torchdiffeq>=0.2.3",
+  "prophet==1.1.5", # Pinned
+  "stable-baselines3>=1.6.0",
+  "gymnasium>=0.26.0",
+  "pymoo>=0.6.0",
+  "optuna>=3.0.0",
+  "hyperopt>=0.2.0",
+  "econml>=0.14.0",
+  "dowhy>=0.8.0",
+  "simglucose>=0.2.9",
+  "shap==0.40.0", # Pinned
+  "lime>=0.2.0",
+  "redis>=4.0.0", # If used beyond basic API caching
+  "celery>=5.2.0", # If async tasks are core
+  "wandb>=0.13.0",
+  "tensorboard>=2.10.0",
+  "dash>=2.6.0",
+  "streamlit>=1.12.0",
+  "h5py>=3.7.0",
+  "pyarrow>=9.0.0",
+  "openpyxl>=3.0.0",
+  "pydicom>=2.3.0",
+  "hl7>=0.3.12",
+  "numba>=0.56.0",
+  "aioredis>=2.0.0",
+  "psutil>=5.9.0",
+  "dash-bootstrap-components>=1.2.0",
+  "dash-daq>=0.5.0",
+  "einops>=0.6.0",
+  "accelerate>=0.20.0",
+]
+
+# Full installation including cognitive and heavy extras
+full = [
+    "digital-twin-t1d[cognitive,heavy]"
+]
+
+# Development dependencies
 dev = [
-    "pytest>=6.0",
-    "pytest-cov>=3.0",
-    "black>=22.0",
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-benchmark>=4.0.0",
+    "black>=22.0.0",
+    "flake8>=5.0.0",
+    "mypy>=0.971",
     "isort>=5.10",
-    "flake8>=4.0",
-    "mypy>=0.950",
-    "pre-commit>=2.15",
+    "pip-tools", # For managing requirements
+    "pre-commit", # If you use pre-commit hooks
+    # Jupyter for examples/notebooks
+    "jupyter>=1.0.0",
+    "jupyterlab>=3.4.0",
+    "notebook>=6.4.0",
+    "ipywidgets>=7.6", # For interactive examples
 ]
 
+# Documentation dependencies
 docs = [
-    "sphinx>=4.0",
-    "sphinx-rtd-theme>=1.0",
-    "sphinx-autoapi>=1.8",
-    "myst-parser>=0.17",
-    "nbsphinx>=0.8",
+    "sphinx>=5.0.0",
+    "sphinx-rtd-theme>=1.0.0",
+    "sphinx-autodoc-typehints>=1.19.0",
+    "myst-parser>=0.17", # If using MyST for Markdown in Sphinx
+    "nbsphinx>=0.8",     # For Jupyter notebook integration in Sphinx
 ]
 
-examples = [
-    "jupyter>=1.0",
-    "jupyterlab>=3.0",
-    "ipywidgets>=7.6",
-    "notebook>=6.4",
-]
-
+# Simulation specific (if not covered by 'heavy' or 'core')
 simulation = [
     "simpy>=4.0",
-    # "gym>=0.21.0", # Removed in favor of gymnasium from main requirements
+    # gymnasium is in core dependencies if needed by stable-baselines3
     "control>=0.9.0",
 ]
-
-optimization = [
-    "optuna>=3.0",
-    "hyperopt>=0.2.7",
-    "ray[tune]>=2.0",
-]
-
-mamba = [ # New optional dependency group for Mamba
-    "mamba-ssm==1.2.0"
-]
-
-all = [
-    "digital-twin-t1d[dev,docs,examples,simulation,optimization,mamba]" # Added mamba to 'all'
-]
+# 'all' meta-extra can be defined if needed, but 'full' often serves this purpose
+# all = ["digital-twin-t1d[cognitive,heavy,dev,docs,simulation]"]
 
 [project.urls]
 Homepage = "https://github.com/digital-twin-t1d/digital-twin-t1d"

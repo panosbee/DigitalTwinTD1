@@ -63,7 +63,7 @@ charset-normalizer==3.4.2
     # via requests
 clarabel==0.11.0
     # via cvxpy
-click==8.2.1
+click==8.1.7
     # via
     #   -r requirements.in
     #   celery

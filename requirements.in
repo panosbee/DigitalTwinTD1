@@ -7,7 +7,7 @@
     # Deep learning
     torch>=1.10.0
     # torchvision>=0.11.0 # Often comes with torch or can be added if specific features used
-    tensorflow>=2.16.0,<2.17.0 # Use a version compatible with Python 3.9-3.12
+    tensorflow>=2.16.0 # Allow any 2.16.x or newer compatible version
 
     # Time series & forecasting
     statsmodels>=0.13.0
@@ -57,7 +57,7 @@
     # Utilities
     tqdm>=4.64.0
     joblib>=1.1.0
-    click>=8.0.0
+    click==8.1.7 # Pin to a version compatible with Python 3.8+
     python-dotenv>=0.20.0
     pydantic>=1.10.0 # FastAPI uses this heavily
 

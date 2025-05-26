@@ -19,6 +19,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.twin import DigitalTwin
 from sdk.integrations import DeviceFactory # Import DeviceFactory for validation
+from agent import CognitiveAgent, GlucoseEncoder, VectorMemoryStore # For Phase B
 
 
 class IntegrationType(Enum):
@@ -92,14 +93,18 @@ class DigitalTwinSDK:
     def __init__(self,
                  api_key: Optional[str] = None,
                  mode: str = "production",
-                 config: Optional[Dict] = None):
+                 config: Optional[Dict] = None,
+                 use_agent: bool = False, # Phase B: Add use_agent
+                 agent_config: Optional[Dict] = None): # Phase B: Config for agent
         """
         Initialize SDK.
         
         Args:
             api_key: API key for cloud services (optional)
-            mode: "production", "research", "mobile", "clinical"
-            config: Custom configuration
+            mode: "production", "research", "mobile", "clinical", "test", "demo"
+            config: Custom configuration for SDK and DigitalTwin model
+            use_agent: If True, initializes and uses the CognitiveAgent.
+            agent_config: Configuration for the CognitiveAgent components (encoder, memory_store).
         """
         self.api_key = api_key
         self.mode = mode
@@ -123,7 +128,47 @@ class DigitalTwinSDK:
         # Patient profile
         self.patient_profile = {}
         
-        print(f"🎯 Digital Twin SDK initialized in {mode} mode")
+        # Cognitive Agent (Phase B)
+        self.use_agent = use_agent
+        self.agent: Optional[CognitiveAgent] = None
+        self.agent_config = agent_config or {}
+
+        if self.use_agent:
+            try:
+                encoder_params = self.agent_config.get('encoder_params', {})
+                memory_params = self.agent_config.get('memory_store_params', {'embedding_dim': encoder_params.get('embedding_dim', 64)})
+                
+                # Ensure embedding_dim matches between encoder and memory store if provided
+                if 'embedding_dim' in encoder_params and 'embedding_dim' not in memory_params:
+                    memory_params['embedding_dim'] = encoder_params['embedding_dim']
+                elif 'embedding_dim' not in encoder_params and 'embedding_dim' in memory_params:
+                     # This case is less likely if we default encoder_params embedding_dim first
+                    pass # Use memory_params's dim
+                elif 'embedding_dim' in encoder_params and 'embedding_dim' in memory_params:
+                    if encoder_params['embedding_dim'] != memory_params['embedding_dim']:
+                        raise ValueError(
+                            "embedding_dim mismatch between encoder_params and memory_store_params in agent_config."
+                        )
+                
+                # Default embedding_dim if not set anywhere
+                final_embedding_dim = encoder_params.get('embedding_dim', memory_params.get('embedding_dim', 64))
+                encoder_params.setdefault('embedding_dim', final_embedding_dim)
+                memory_params.setdefault('embedding_dim', final_embedding_dim)
+
+                encoder = GlucoseEncoder(**encoder_params)
+                memory_store = VectorMemoryStore(**memory_params)
+                self.agent = CognitiveAgent(encoder=encoder, memory_store=memory_store)
+                print(f"🧠 Cognitive Agent initialized.")
+            except ImportError as e:
+                print(f"⚠️ Failed to initialize CognitiveAgent: {e}. Agent features will be unavailable.")
+                print("   Please ensure agent dependencies are installed (e.g., pip install digital-twin-t1d[cognitive]).")
+                self.use_agent = False # Disable agent if components fail to load
+            except Exception as e:
+                print(f"⚠️ An error occurred during CognitiveAgent initialization: {e}")
+                self.use_agent = False
+
+
+        print(f"🎯 Digital Twin SDK initialized in {mode} mode {'with Cognitive Agent' if self.use_agent else ''}")
     
     # ===== DEVICE INTEGRATION =====
     
@@ -208,6 +253,61 @@ class DigitalTwinSDK:
             values=actual_predictions_array.tolist(),
             confidence_intervals=intervals,
             risk_alerts=risk_alerts
+        )
+    def contextual_predict(
+        self,
+        glucose_history_window: Union[List[float], np.ndarray], # Current window of glucose data
+        horizon_minutes: int = 30,
+        include_confidence: bool = True,
+        include_risks: bool = True
+    ) -> Prediction:
+        """
+        Generates glucose predictions incorporating contextual information from the Cognitive Agent
+        if the agent is enabled and available.
+        """
+        # Get standard prediction first
+        # Note: predict_glucose uses its own _get_latest_data, not directly this window.
+        # This might need refinement if contextual_predict is to use a *specific* passed window
+        # for the base prediction itself, rather than just for pattern matching.
+        # For now, we assume predict_glucose uses its internal mechanism for base prediction data.
+        base_prediction_obj = self.predict_glucose(
+            horizon_minutes=horizon_minutes,
+            include_confidence=include_confidence,
+            include_risks=include_risks
+        )
+
+        contextual_info = []
+        if self.use_agent and self.agent:
+            try:
+                # Ensure glucose_history_window is a numpy array for the agent
+                if isinstance(glucose_history_window, list):
+                    glucose_history_window_np = np.array(glucose_history_window, dtype=np.float32)
+                elif isinstance(glucose_history_window, np.ndarray):
+                    glucose_history_window_np = glucose_history_window.astype(np.float32)
+                else:
+                    raise ValueError("glucose_history_window must be a list or NumPy array.")
+
+                similar_patterns = self.agent.find_similar_patterns(glucose_history_window_np, k=1)
+                if similar_patterns:
+                    first_similar = similar_patterns[0]
+                    similarity_score = first_similar.get('similarity_score', 0)
+                    pattern_ts = first_similar.get('metadata', {}).get('timestamp', 'N/A')
+                    contextual_info.append(
+                        f"Context: Found similar past pattern (score: {similarity_score:.2f}, ts: {pattern_ts})."
+                    )
+            except Exception as e:
+                contextual_info.append(f"Agent context error: {e}")
+        
+        final_risk_alerts = base_prediction_obj.risk_alerts or []
+        if contextual_info:
+            final_risk_alerts.extend(contextual_info)
+
+        return Prediction(
+            timestamp=base_prediction_obj.timestamp,
+            horizon_minutes=base_prediction_obj.horizon_minutes,
+            values=base_prediction_obj.values,
+            confidence_intervals=base_prediction_obj.confidence_intervals,
+            risk_alerts=final_risk_alerts
         )
     
     # ===== RECOMMENDATIONS =====
@@ -433,7 +533,7 @@ class DigitalTwinSDK:
         """Auto-train with sample data for demos."""
         # Generate sample training data
         n_samples = 1000
-        timestamps = pd.date_range(end='now', periods=n_samples, freq='5T')
+        timestamps = pd.date_range(end='now', periods=n_samples, freq='5min')
         
         # Synthetic CGM data with realistic patterns
         base_glucose = 120
@@ -473,7 +573,7 @@ def quick_predict(glucose_history: List[float],
     # Convert to DataFrame
     data = pd.DataFrame({
         'cgm': glucose_history,
-        'timestamp': pd.date_range(end='now', periods=len(glucose_history), freq='5T')
+        'timestamp': pd.date_range(end='now', periods=len(glucose_history), freq='5min')
     })
     
     prediction = sdk.predict_glucose(horizon_minutes)

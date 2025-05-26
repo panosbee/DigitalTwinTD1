@@ -475,7 +475,7 @@ class ModelZoo:
         logger.info(f"✅ Benchmark complete: MAPE={mape:.2f}%, RMSE={rmse:.2f}")
         return metrics
     
-    def compare_models(self, model_ids: List[str], test_data: Optional[Any] = None) -> 'pandas.DataFrame':
+    def compare_models(self, model_ids: List[str], test_data: Optional[Any] = None) -> 'pd.DataFrame':
         """Compares the performance of multiple models from the Zoo.
 
         Runs benchmarks for each specified model and returns a DataFrame with
@@ -496,9 +496,14 @@ class ModelZoo:
             logger.info(f"Testing {model_id}...")
             
             info = self.get_model_info(model_id)
+            if info is None:
+                logger.warning(f"Model ID {model_id} not found in zoo. Skipping comparison.")
+                continue
+            
             metrics = self.benchmark_model(model_id, test_data)
             
             results.append({
+                "model_id": model_id, # Add model_id for clarity
                 "model": info.name,
                 "type": info.model_type,
                 "size_mb": info.size_mb,
@@ -596,7 +601,9 @@ def quick_predict(glucose_history: List[float],
         float: The predicted glucose value.
     """
     zoo = ModelZoo()
-    return zoo.predict(model, glucose_history, horizon)
+    # Convert list to numpy array as expected by zoo.predict
+    glucose_history_np = np.array(glucose_history, dtype=np.float32)
+    return zoo.predict(model, glucose_history_np, horizon)
 
 
 # CLI interface

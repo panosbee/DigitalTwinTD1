@@ -19,6 +19,7 @@ sphinx-autodoc-typehints>=1.19.0
 jupyter>=1.0.0
 jupyterlab>=3.4.0
 notebook>=6.4.0
+ipython>=8.14.0,<9.0.0 # For wider Python compatibility (e.g. Py3.10)
 
 # For managing requirements
 pip-tools

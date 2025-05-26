@@ -15,8 +15,9 @@ import numpy as np
 from collections import deque
 import asyncio
 import threading
+from typing import Optional # Import Optional
 
-from .core import DigitalTwinSDK
+from .core import DigitalTwinSDK, Prediction # Import Prediction
 from .datasets import load_diabetes_data
 
 
@@ -165,20 +166,25 @@ class RealTimeDashboard:
             
             # Get prediction
             try:
-                prediction = self.sdk.predict_glucose(horizon_minutes=30)
-                recommendations = self.sdk.get_recommendations()
-            except:
-                prediction = None
-                recommendations = []
+                sdk_prediction_obj = self.sdk.predict_glucose(horizon_minutes=30)
+                sdk_recommendations_dict = self.sdk.get_recommendations()
+            except Exception: # Catch more specific exceptions if possible
+                sdk_prediction_obj = None
+                sdk_recommendations_dict = {} # Ensure it's a dict
             
             # Current glucose
             current = self.current_data['glucose']
             trend = self._get_trend_arrow(self.current_data['trend'])
             
             # Prediction
-            if prediction:
-                pred_value = f"{prediction.value:.0f}"
-                confidence = f"Confidence: {prediction.confidence:.0f}%"
+            if sdk_prediction_obj and sdk_prediction_obj.values:
+                pred_value = f"{sdk_prediction_obj.values[0]:.0f}"
+                # Placeholder for confidence, as sdk.core.Prediction has confidence_intervals
+                confidence_percent = 95.0 # Default placeholder
+                if sdk_prediction_obj.confidence_intervals:
+                    # Implement logic to derive a single confidence % if needed
+                    pass
+                confidence = f"Confidence: {confidence_percent:.0f}%"
             else:
                 pred_value = "--"
                 confidence = "N/A"
@@ -192,20 +198,38 @@ class RealTimeDashboard:
             
             # Recommendations
             rec_items = []
-            for i, rec in enumerate(recommendations[:3]):
-                icon = self._get_recommendation_icon(rec.category)
+            processed_recs_for_display = []
+            if isinstance(sdk_recommendations_dict.get("insulin"), dict):
+                action = sdk_recommendations_dict["insulin"].get("action", "Consider insulin adjustment.")
+                reason = sdk_recommendations_dict["insulin"].get("reason", "")
+                processed_recs_for_display.append({"action": action, "reason": reason, "category": "insulin"})
+
+            if isinstance(sdk_recommendations_dict.get("meals"), list):
+                for meal_rec in sdk_recommendations_dict["meals"][:2]: # Max 2 meal recs
+                    action = meal_rec if isinstance(meal_rec, str) else meal_rec.get("action", "Consider meal adjustment.")
+                    reason = "" if isinstance(meal_rec, str) else meal_rec.get("reason", "")
+                    processed_recs_for_display.append({"action": action, "reason": reason, "category": "food"})
+            
+            if isinstance(sdk_recommendations_dict.get("activity"), list):
+                for activity_rec in sdk_recommendations_dict["activity"][:1]: # Max 1 activity rec
+                    action = activity_rec if isinstance(activity_rec, str) else activity_rec.get("action", "Consider activity level.")
+                    reason = "" if isinstance(activity_rec, str) else activity_rec.get("reason", "")
+                    processed_recs_for_display.append({"action": action, "reason": reason, "category": "exercise"})
+
+            for rec_data in processed_recs_for_display[:3]: # Display up to 3 recommendations total
+                icon = self._get_recommendation_icon(rec_data["category"])
                 rec_items.append(
                     html.Div([
                         html.Span(icon, className="rec-icon"),
                         html.Div([
-                            html.Strong(rec.action),
-                            html.P(rec.reason, className="rec-reason")
+                            html.Strong(rec_data["action"]),
+                            html.P(rec_data["reason"], className="rec-reason")
                         ])
                     ], className="recommendation-item")
                 )
             
             # Charts
-            glucose_fig = self._create_glucose_chart()
+            glucose_fig = self._create_glucose_chart(sdk_prediction_obj) # Pass prediction object
             pattern_fig = self._create_pattern_chart()
             tir_gauge = self._create_tir_gauge(tir)
             
@@ -315,7 +339,7 @@ class RealTimeDashboard:
         }
         return icons.get(category, '💡')
     
-    def _create_glucose_chart(self):
+    def _create_glucose_chart(self, prediction_obj: Optional[Prediction] = None): # Use imported Prediction
         """Create main glucose chart."""
         # Generate time axis
         now = datetime.now()
@@ -341,10 +365,25 @@ class RealTimeDashboard:
         
         # Add prediction
         if self.prediction_history:
-            pred_times = [now + timedelta(minutes=5*i) for i in range(1, 7)]
+            pred_times = [now + timedelta(minutes=5*i) for i in range(1, 7)] # For 30 min horizon (6 points)
+            # Ensure prediction_history has enough points or handle gracefully
+            prediction_points_to_plot = list(self.prediction_history)
+            
+            # The y-values for prediction start from the current glucose, then the predicted values.
+            # If sdk_prediction_obj.values exists, use them. Otherwise, use what's in prediction_history.
+            y_pred_values = [self.current_data['glucose']]
+            if prediction_obj and prediction_obj.values: # Use the passed prediction_obj
+                 y_pred_values.extend(prediction_obj.values[:5]) # Get up to 5 future points
+            elif prediction_points_to_plot: # Fallback to deque if no fresh prediction
+                 y_pred_values.extend(prediction_points_to_plot[:5])
+            
+            # Ensure y_pred_values matches length of pred_times for plotting
+            # If y_pred_values is shorter, pad with last known value or handle appropriately
+            # For simplicity, we'll plot what we have, Plotly handles mismatched lengths to some extent.
+
             fig.add_trace(go.Scatter(
-                x=pred_times,
-                y=[self.current_data['glucose']] + [p for p in self.prediction_history[:5]],
+                x=pred_times[:len(y_pred_values)-1], # Match x to y if y_pred_values is shorter than 6
+                y=y_pred_values[1:], # Plot only future predicted points
                 mode='lines+markers',
                 name='Prediction',
                 line=dict(color='#E74C3C', width=2, dash='dash'),

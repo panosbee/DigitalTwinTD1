@@ -1,11 +1,12 @@
 # agent/agent.py
 import numpy as np
-from typing import List, Tuple, Dict, Optional, Union
+from typing import List, Dict, Optional, Union # Removed Tuple
 from datetime import datetime, timedelta
-from dataclasses import dataclass # Added for PumpContext
+from dataclasses import dataclass  # Added for PumpContext
 
 from .encoder import GlucoseEncoder
 from .memory_store import VectorMemoryStore
+
 
 @dataclass
 class PumpContext:
@@ -14,16 +15,16 @@ class PumpContext:
     All fields are optional to allow for partial information.
     """
     timestamp: datetime
-    bolus_type: Optional[str] = None          # e.g., "normal", "extended", "super-bolus"
-    bolus_amount: Optional[float] = None       # Units
-    programmed_bolus_amount: Optional[float] = None # Units, if different from delivered (e.g. max bolus)
-    active_basal_rate: Optional[float] = None  # Current effective basal rate (U/hr)
-    
+    bolus_type: Optional[str] = None            # e.g., "normal", "extended", "super-bolus"
+    bolus_amount: Optional[float] = None         # Units
+    programmed_bolus_amount: Optional[float] = None  # Units, if different from delivered (e.g. max bolus)
+    active_basal_rate: Optional[float] = None    # Current effective basal rate (U/hr)
+
     # Temporary Basal Information
     temp_basal_active: Optional[bool] = False
-    temp_basal_type: Optional[str] = None      # e.g., "percentage", "absolute"
-    temp_basal_rate_value: Optional[float] = None # The rate (U/hr) or percentage (e.g., 150 for 150%)
-    temp_basal_duration_minutes: Optional[int] = None # Remaining or total duration
+    temp_basal_type: Optional[str] = None        # e.g., "percentage", "absolute"
+    temp_basal_rate_value: Optional[float] = None  # The rate (U/hr) or percentage (e.g., 150 for 150%)
+    temp_basal_duration_minutes: Optional[int] = None  # Remaining or total duration
     
     # Scheduled Basal Information (could be from a profile)
     scheduled_basal_rate: Optional[float] = None # U/hr

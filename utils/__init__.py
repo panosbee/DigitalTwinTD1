@@ -16,9 +16,11 @@ __all__ = [
     'clarke_error_grid', 'parkes_error_grid',
     'time_in_range', 'glycemic_risk_index',
     'calculate_metrics',
+    'DiabetesMetrics', # Added DiabetesMetrics
     
     # Οπτικοποίηση
     'plot_predictions', 'plot_glucose_trend',
     'plot_clarke_grid', 'plot_training_history',
-    'create_dashboard'
-] 
+    'create_dashboard',
+    'VisualizationSuite', # Added VisualizationSuite
+]

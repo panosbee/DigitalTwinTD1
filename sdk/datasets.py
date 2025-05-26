@@ -191,7 +191,7 @@ class DiabetesDatasets:
     def load_synthetic_cgm(self, 
                           n_patients: int = 10,
                           days: int = 30,
-                          sampling_rate: str = "5T") -> pd.DataFrame:
+                          sampling_rate: str = "5min") -> pd.DataFrame:
         """
         Generate synthetic CGM data for testing.
         
@@ -210,7 +210,7 @@ class DiabetesDatasets:
             timestamps = pd.date_range(
                 start='2024-01-01',
                 periods=days * 288,  # 288 = 24*60/5 (5-min intervals)
-                freq=sampling_rate
+                freq=sampling_rate # sampling_rate is '5min' by default if not overridden
             )
             
             # Generate realistic CGM patterns
@@ -271,7 +271,7 @@ class DiabetesDatasets:
             data = data.set_index('timestamp')
         
         # Resample to 5-minute intervals
-        data_resampled = data[target_col].resample('5T').mean().interpolate()
+        data_resampled = data[target_col].resample('5min').mean().interpolate()
         
         # Create sliding windows
         lookback_steps = lookback_hours * 12  # 12 = 60min/5min

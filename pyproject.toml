@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "digital-twin-t1d"
-version = "0.1.0"
+version = "1.1.0"
 authors = [
     {name = "Digital Twin T1D Team", email = "contact@digital-twin-t1d.org"},
 ]

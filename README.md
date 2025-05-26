@@ -178,6 +178,31 @@ results = sdk.run_virtual_trial(
     interventions=['cgm_alerts', 'ai_recommendations']
 )
 print(f"TIR Improvement: {results.tir_improvement}%")
+
+### 6. Contextual Prediction with Cognitive Agent
+```python
+from sdk import DigitalTwinSDK
+import numpy as np
+
+# Initialize SDK with the agent enabled
+# Agent config can be customized, see sdk.core.DigitalTwinSDK for details
+sdk_agent = DigitalTwinSDK(mode='demo', use_agent=True)
+sdk_agent.connect_device('mock_cgm') # Connect a device for base predictions
+
+# Sample glucose window (e.g., last 2 hours, 5-min intervals = 24 points)
+glucose_window = np.random.normal(120, 20, 24).tolist()
+
+# Get contextual prediction
+contextual_pred = sdk_agent.contextual_predict(
+    glucose_history_window=glucose_window,
+    horizon_minutes=60
+)
+print(f"Contextual Predicted Glucose (60 min): {contextual_pred.values[0]:.1f} mg/dL")
+if contextual_pred.risk_alerts:
+    print("Alerts/Context:")
+    for alert in contextual_pred.risk_alerts:
+        print(f"- {alert}")
+```
 ```
 
 ## 🏗️ Architecture

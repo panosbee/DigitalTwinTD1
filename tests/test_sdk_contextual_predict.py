@@ -105,3 +105,32 @@ def test_contextual_predict_agent_disabled(sample_glucose_window):
     assert contextual_pred.values == base_pred.values
     assert contextual_pred.timestamp is not None # Timestamps will be different, just check existence
     assert contextual_pred.horizon_minutes == base_pred.horizon_minutes
+
+def test_contextual_predict_with_pump_context(sdk_with_agent, sample_glucose_window):
+    """
+    Test that contextual_predict accepts PumpContext and acknowledges it.
+    """
+    from agent.agent import PumpContext # Import here or at top of file
+
+    pump_data = PumpContext(
+        timestamp=datetime.now(),
+        bolus_amount=5.0,
+        bolus_type="normal",
+        active_basal_rate=0.75
+    )
+
+    prediction_obj = sdk_with_agent.contextual_predict(
+        glucose_history_window=sample_glucose_window,
+        pump_context=pump_data,
+        horizon_minutes=30
+    )
+
+    assert isinstance(prediction_obj, Prediction)
+    assert isinstance(prediction_obj.risk_alerts, list)
+
+    found_pump_context_message = False
+    for alert in prediction_obj.risk_alerts:
+        if "PumpContext provided" in alert and "Bolus 5.0U" in alert:
+            found_pump_context_message = True
+            break
+    assert found_pump_context_message, "PumpContext acknowledgment message missing or incorrect in risk_alerts"

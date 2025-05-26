@@ -2,9 +2,49 @@
 import numpy as np
 from typing import List, Tuple, Dict, Optional, Union
 from datetime import datetime, timedelta
+from dataclasses import dataclass # Added for PumpContext
 
 from .encoder import GlucoseEncoder
 from .memory_store import VectorMemoryStore
+
+@dataclass
+class PumpContext:
+    """
+    Represents the context of insulin pump actions and status at a given time.
+    All fields are optional to allow for partial information.
+    """
+    timestamp: datetime
+    bolus_type: Optional[str] = None          # e.g., "normal", "extended", "super-bolus"
+    bolus_amount: Optional[float] = None       # Units
+    programmed_bolus_amount: Optional[float] = None # Units, if different from delivered (e.g. max bolus)
+    active_basal_rate: Optional[float] = None  # Current effective basal rate (U/hr)
+    
+    # Temporary Basal Information
+    temp_basal_active: Optional[bool] = False
+    temp_basal_type: Optional[str] = None      # e.g., "percentage", "absolute"
+    temp_basal_rate_value: Optional[float] = None # The rate (U/hr) or percentage (e.g., 150 for 150%)
+    temp_basal_duration_minutes: Optional[int] = None # Remaining or total duration
+    
+    # Scheduled Basal Information (could be from a profile)
+    scheduled_basal_rate: Optional[float] = None # U/hr
+
+    # Consumables / Status
+    insulin_on_board: Optional[float] = None   # Units
+    carbs_on_board: Optional[float] = None     # Grams
+    sensor_glucose_value: Optional[float] = None # mg/dL, if available from pump's integrated CGM
+    pump_battery_level: Optional[int] = None   # Percentage
+    pump_reservoir_units: Optional[float] = None # Units remaining
+    
+    # Pump-generated alerts or states
+    pump_status: Optional[str] = None          # e.g., "normal", "suspended", "low_reservoir", "occlusion"
+    control_iq_status: Optional[str] = None    # For Tandem pumps, e.g., "active", "sleep", "exercise"
+
+    def __post_init__(self):
+        # Basic validation or normalization can go here if needed
+        if self.bolus_amount is not None and self.bolus_amount < 0:
+            raise ValueError("Bolus amount cannot be negative.")
+        if self.active_basal_rate is not None and self.active_basal_rate < 0:
+            raise ValueError("Basal rate cannot be negative.")
 
 class CognitiveAgent:
     def __init__(self, encoder: GlucoseEncoder, memory_store: VectorMemoryStore):

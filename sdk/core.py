@@ -20,6 +20,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.twin import DigitalTwin
 from sdk.integrations import DeviceFactory # Import DeviceFactory for validation
 from agent import CognitiveAgent, GlucoseEncoder, VectorMemoryStore # For Phase B
+from agent.agent import PumpContext # For Phase C
 
 
 class IntegrationType(Enum):
@@ -257,6 +258,7 @@ class DigitalTwinSDK:
     def contextual_predict(
         self,
         glucose_history_window: Union[List[float], np.ndarray], # Current window of glucose data
+        pump_context: Optional[PumpContext] = None, # Phase C: Add pump_context
         horizon_minutes: int = 30,
         include_confidence: bool = True,
         include_risks: bool = True
@@ -277,6 +279,9 @@ class DigitalTwinSDK:
         )
 
         contextual_info = []
+        if pump_context:
+            contextual_info.append(f"PumpContext provided: Bolus {pump_context.bolus_amount}U, Basal {pump_context.active_basal_rate}U/hr (Note: Pump context not fully utilized yet).")
+
         if self.use_agent and self.agent:
             try:
                 # Ensure glucose_history_window is a numpy array for the agent
@@ -459,14 +464,32 @@ class DigitalTwinSDK:
         # This allows predict_glucose to proceed if a device was notionally connected,
         # but will fail if connect_device was never called or devices were cleared.
         
-        # Temporary, return dummy data
+        # Temporary, return dummy data - expanded for more stability with ARIMA
+        # Ensure the number of samples is at least what a typical ARIMA model might need for its order.
+        # For example, if p=5, d=1, q=0, it needs at least 6 points.
+        # Let's provide a bit more, e.g., 2 hours of data (24 points at 5-min intervals).
+        num_samples = 24
+        timestamps = pd.date_range(end=datetime.now() - timedelta(minutes=(num_samples-1)*5), periods=num_samples, freq='5min')
+        
+        # More stable recent CGM data
+        cgm_values = np.linspace(110, 130, num_samples) + np.random.normal(0, 2, num_samples)
+        # Minimal insulin, carbs, activity for this dummy data
+        insulin_values = np.zeros(num_samples)
+        carbs_values = np.zeros(num_samples)
+        activity_values = np.zeros(num_samples)
+
+        # Add a small, recent bolus and carb intake to make it slightly more realistic
+        if num_samples >= 6:
+            insulin_values[-6] = 1.0 # 1U bolus 30 mins ago
+            carbs_values[-6] = 15.0  # 15g carbs 30 mins ago
+
         return pd.DataFrame({
-            'cgm': [120, 125, 130], # Ensure these match expected input for models
-            'insulin': [0.0, 2.0, 0.0], # Use floats for consistency
-            'carbs': [0.0, 30.0, 0.0], # Use floats
-            # Add other potential features models might expect, with defaults
-            'activity': [0.0, 0.0, 0.0]
-        })
+            'timestamp': timestamps, # Ensure timestamp is present for model processing
+            'cgm': cgm_values,
+            'insulin': insulin_values,
+            'carbs': carbs_values,
+            'activity': activity_values
+        }).set_index('timestamp') # Set timestamp as index, as expected by some models
     
     def _assess_risks(self, predictions: np.ndarray) -> List[str]:
         """Assess risks from predictions."""

@@ -188,20 +188,22 @@ class DiabetesDatasets:
         else:
             raise NotImplementedError(f"Loading {dataset_id} not implemented yet")
     
-    def load_synthetic_cgm(self, 
+    def load_synthetic_cgm(self,
                           n_patients: int = 10,
                           days: int = 30,
-                          sampling_rate: str = "5min") -> pd.DataFrame:
+                          sampling_rate: str = "5min",
+                          include_pump_data: bool = False) -> pd.DataFrame: # Phase C: Add pump data flag
         """
-        Generate synthetic CGM data for testing.
+        Generate synthetic CGM data for testing, optionally with pump data.
         
         Args:
             n_patients: Number of synthetic patients
             days: Number of days of data
-            sampling_rate: Pandas frequency string (default "5T" = 5 minutes)
+            sampling_rate: Pandas frequency string (default "5min")
+            include_pump_data: If True, adds synthetic bolus, basal, and carb data.
             
         Returns:
-            DataFrame with synthetic CGM data
+            DataFrame with synthetic CGM data (and optionally pump data)
         """
         data_list = []
         
@@ -238,13 +240,36 @@ class DiabetesDatasets:
             cgm_values = np.clip(cgm_values, 40, 400)  # Realistic bounds
             
             # Create patient data
-            patient_data = pd.DataFrame({
+            patient_df_data = {
                 'timestamp': timestamps,
                 'patient_id': f'synthetic_{patient_id:03d}',
                 'cgm': cgm_values,
                 'data_source': 'synthetic'
-            })
-            
+            }
+
+            if include_pump_data:
+                # Add synthetic pump data
+                # Simple basal rate (constant for this synthetic patient)
+                patient_df_data['basal_rate'] = np.full(len(timestamps), np.random.uniform(0.5, 1.5)) # U/hr
+                
+                # Initialize bolus and carbs
+                patient_df_data['bolus_amount'] = np.zeros(len(timestamps))
+                patient_df_data['carbs_input'] = np.zeros(len(timestamps))
+
+                # Add some boluses and carbs aligned with meal effects
+                # This is a simplified simulation
+                for day_idx in range(days):
+                    for meal_hour_offset in [8*12, 13*12, 19*12]: # 8am, 1pm, 7pm in 5-min intervals
+                        meal_event_idx = day_idx * 288 + meal_hour_offset
+                        if meal_event_idx < len(timestamps):
+                            # Carbs at meal time
+                            patient_df_data['carbs_input'][meal_event_idx] = np.random.uniform(30, 80)
+                            # Bolus slightly before or at meal time
+                            bolus_idx = meal_event_idx - np.random.randint(0,3) # 0-10 mins before meal
+                            if bolus_idx >=0:
+                                patient_df_data['bolus_amount'][bolus_idx] = patient_df_data['carbs_input'][meal_event_idx] / np.random.uniform(10,15) # Simple ICR
+
+            patient_data = pd.DataFrame(patient_df_data)
             data_list.append(patient_data)
         
         return pd.concat(data_list, ignore_index=True)
